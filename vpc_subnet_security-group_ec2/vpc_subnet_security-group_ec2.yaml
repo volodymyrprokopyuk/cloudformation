@@ -1,0 +1,245 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+    aws cloudformation validate-template --template-body file://$(pwd)/vpc_subnet_security-group_ec2.yaml
+    aws cloudformation create-stack --stack-name VladStack --template-body file://$(pwd)/vpc_subnet_security-group_ec2.yaml
+    aws cloudformation update-stack --stack-name VladStack --template-body file://$(pwd)/vpc_subnet_security-group_ec2.yaml
+    aws cloudformation delete-stack --stack-name VladStack
+Parameters:
+    ImageId:
+        Description: EC2 image ID
+        Type: String
+        Default: ami-0eaec5838478eb0ba
+    InstanceType:
+        Description: EC2 instance type
+        Type: String
+        Default: t2.micro
+    KeyName:
+        Description: SSH key name to access EC2
+        Type: String
+        Default: vprokopy
+Resources:
+    # VPC
+    Vpc:
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: 10.1.0.0/16
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            Tags:
+                - Key: Name
+                  Value: !Join ["", [!Ref "AWS::StackName", "-VPC"]]
+    # Public Subnet
+    PublicSubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: 10.1.10.0/24
+            AvailabilityZone: !Select [0, !GetAZs ]
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-Public
+    # InternetGateway
+    InternetGateway:
+        Type: AWS::EC2::InternetGateway
+    GatewayAttachment:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            VpcId: !Ref Vpc
+            InternetGatewayId: !Ref InternetGateway
+    # Public RouteTable
+    PublicRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: Public
+    PublicRoute1:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PublicRouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+    PublicSubnetRouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PublicRouteTable
+            SubnetId: !Ref PublicSubnet
+    # Public SecurityGroup
+    PublicSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: PublicSecurityGroup
+            GroupDescription: Public Security Group
+            VpcId: !Ref Vpc
+    PublicOutboundRule1:
+        Type: AWS::EC2::SecurityGroupEgress
+        Properties:
+            GroupId: !Ref PublicSecurityGroup
+            IpProtocol: "-1"
+            FromPort: 0
+            ToPort: 65535
+            CidrIp: 0.0.0.0/0
+    PublicInboundRule1:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            GroupId: !Ref PublicSecurityGroup
+            IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: 0.0.0.0/0
+    # Public EC2
+    PublicEc2:
+        Type: AWS::EC2::Instance
+        Properties:
+            ImageId: !Ref ImageId
+            InstanceType: !Ref InstanceType
+            KeyName: !Ref KeyName
+            SecurityGroupIds:
+                - !GetAtt PublicSecurityGroup.GroupId
+            SubnetId: !Ref PublicSubnet
+            Tags:
+                - Key: Name
+                  Value: PublicEc2
+    # Private Subnet
+    PrivateSubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: 10.1.20.0/24
+            AvailabilityZone: !Select [1, !GetAZs ]
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-Private
+    # NatGateway
+    ElasticIpAddress:
+        Type: AWS::EC2::EIP
+        Properties:
+            Domain: Vpc
+    NatGateway:
+        Type: AWS::EC2::NatGateway
+        Properties:
+            AllocationId: !GetAtt ElasticIpAddress.AllocationId
+            SubnetId: !Ref PrivateSubnet
+            Tags:
+                - Key: Name
+                  Value: !Sub NAT-${AWS::StackName}
+    # Private RouteTable
+    PrivateRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: Private
+    PrivateRoute1:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PrivateRouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId: !Ref NatGateway
+    PrivateSubnetRouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PrivateRouteTable
+            SubnetId: !Ref PrivateSubnet
+    # Private SecurityGroup
+    PrivateSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: PrivateSecurityGroup
+            GroupDescription: Private Security Group
+            VpcId: !Ref Vpc
+    PrivateOutboundRule1:
+        Type: AWS::EC2::SecurityGroupEgress
+        Properties:
+            GroupId: !Ref PrivateSecurityGroup
+            IpProtocol: "-1"
+            FromPort: 0
+            ToPort: 65535
+            CidrIp: 0.0.0.0/0
+    PrivateInboundRule1:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            GroupId: !Ref PrivateSecurityGroup
+            IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: 0.0.0.0/0
+    # Private EC2
+    PrivateEc2:
+        Type: AWS::EC2::Instance
+        Properties:
+            ImageId: !Ref ImageId
+            InstanceType: !Ref InstanceType
+            KeyName: !Ref KeyName
+            SecurityGroupIds:
+                - !GetAtt PrivateSecurityGroup.GroupId
+            SubnetId: !Ref PrivateSubnet
+            Tags:
+                - Key: Name
+                  Value: PrivateEc2
+Outputs:
+    # VPC
+    VpcId:
+        Description: VPC ID
+        Value: !Ref Vpc
+    VpcCidrBlock:
+        Description: VPC CIDR block
+        Value: !GetAtt Vpc.CidrBlock
+    # Public Subnet
+    PublicSubnetId:
+        Description: Public Subnet ID
+        Value: !Ref PublicSubnet
+    PublicSubnetAvailabilityZone:
+        Description: Public Subnet AvailabilityZone
+        Value: !GetAtt PublicSubnet.AvailabilityZone
+    InternetGatewayId:
+        Description: InternetGateway ID
+        Value: !Ref InternetGateway
+    # Public SecurityGroup
+    PublicSecurityGroupId:
+        Description: Public SecurityGroup ID
+        Value: !Ref PublicSecurityGroup
+    # Public EC2
+    PublicEc2InstanceId:
+        Description: Public EC2 instance ID
+        Value: !Ref PublicEc2
+    PublicEc2PublicDnsName:
+        Description: Public EC2 public DNS name
+        Value: !GetAtt PublicEc2.PublicDnsName
+    PublicEc2PublicIp:
+        Description: Public EC2 public IP
+        Value: !GetAtt PublicEc2.PublicIp
+    PublicEc2PrivateDnsName:
+        Description: Public EC2 private DNS name
+        Value: !GetAtt PublicEc2.PrivateDnsName
+    PublicEc2PrivateIp:
+        Description: Public EC2 private IP
+        Value: !GetAtt PublicEc2.PrivateIp
+    # Private Subnet
+    PrivateSubnetId:
+        Description: Private Subnet ID
+        Value: !Ref PrivateSubnet
+    PrivateSubnetAvailabilityZone:
+        Description: Private Subnet AvailabilityZone
+        Value: !GetAtt PrivateSubnet.AvailabilityZone
+    NatGatewayId:
+        Description: NatGateway ID
+        Value: !Ref NatGateway
+    # Private SecurityGroup
+    PrivateSecurityGroupId:
+        Description: Private SecurityGroup ID
+        Value: !Ref PrivateSecurityGroup
+    # Private EC2
+    PrivateEc2InstanceId:
+        Description: Private EC2 instance ID
+        Value: !Ref PrivateEc2
+    PrivateEc2PrivateDnsName:
+        Description: Private EC2 private DNS name
+        Value: !GetAtt PrivateEc2.PrivateDnsName
+    PrivateEc2PrivateIp:
+        Description: Private EC2 private IP
+        Value: !GetAtt PrivateEc2.PrivateIp
