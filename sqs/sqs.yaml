@@ -1,0 +1,33 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+    aws cloudformation validate-template --template-body file://$(pwd)/sqs.yaml
+    aws cloudformation create-stack --stack-name VladStack --template-body file://$(pwd)/sqs.yaml
+    aws cloudformation update-stack --stack-name VladStack --template-body file://$(pwd)/sqs.yaml
+    aws cloudformation update-stack --stack-name VladStack
+Parameters:
+    QueueName:
+        Description: SQS queue name
+        Type: String
+        Default: Vlad-Queue
+Resources:
+    # SQS
+    Sqs:
+        Type: AWS::SQS::Queue
+        Properties:
+            QueueName: !Ref QueueName
+            # [1 sec, 20 secs]
+            # ReceiveMessage call waits 5 seconds for messages from SQS to be included in the response
+            ReceiveMessageWaitTimeSeconds: 2 # Long polling
+            # [0 secs, 12 hours]
+            # The message will be unavailable to other consumers for 30 secs after the message has been delivered
+            # The maximum time of message unavailiability between the ReceiveMessage and DeleteMessage calls
+            VisibilityTimeout: 30
+            # [1 min, 14 days]
+            # SQS retains not delivered messages in the queue for 1 day
+            MessageRetentionPeriod: 86400
+Outputs:
+    # SQS
+    QueueUrl:
+        Description: SQS queue URL
+        Value: !Ref Sqs
