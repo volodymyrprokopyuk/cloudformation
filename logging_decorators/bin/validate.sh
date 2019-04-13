@@ -2,9 +2,8 @@
 
 set -eux
 
-TARGET=*.py
+TARGET=main.py
 
-aws cloudformation validate-template --template-body file://$(pwd)/sqs.yaml
 flake8 $TARGET
 bandit $TARGET
 radon cc $TARGET
