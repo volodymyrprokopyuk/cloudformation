@@ -17,9 +17,10 @@ Resources:
         Properties:
             QueueName: !Ref QueueName
             # [1 sec, 20 secs]
-            # ReceiveMessage call waits 5 seconds for messages from SQS to be included in the response
+            # ReceiveMessage call waits 2 seconds for messages from SQS to be included in the response
             ReceiveMessageWaitTimeSeconds: 2 # Long polling
             # [0 secs, 12 hours]
+            # The maximum, potential time that will be taken by a consumer to successfully process the message
             # The message will be unavailable to other consumers for 30 secs after the message has been delivered
             # The maximum time of message unavailiability between the ReceiveMessage and DeleteMessage calls
             VisibilityTimeout: 30
