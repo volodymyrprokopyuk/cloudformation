@@ -2,10 +2,10 @@
 
 set -eux
 
-TARGET=*.py
+SOURCE=sqs/*.py
 
 aws cloudformation validate-template --template-body file://$(pwd)/sqs.yaml
-flake8 $TARGET
-bandit $TARGET
-radon cc $TARGET
-pylint --max-line-length=120 $TARGET
+flake8 $SOURCE
+bandit $SOURCE
+radon cc $SOURCE
+pylint --max-line-length=120 $SOURCE

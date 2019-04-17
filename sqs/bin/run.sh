@@ -3,7 +3,7 @@
 set -eu
 
 # SQS SendMessage
-python producer.py
+python sqs/producer.py
 sleep 2s
 # SQS ReceiveMessage and DeleteMessage
-python consumer.py
+python sqs/consumer.py
