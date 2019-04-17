@@ -24,4 +24,5 @@ def main():
     print(f">> SQS message {message} sent. MessageId: {message_id}")
 
 
-main()
+if __name__ == "__main__":
+    main()
