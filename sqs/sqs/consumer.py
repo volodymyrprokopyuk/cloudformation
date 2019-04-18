@@ -94,9 +94,9 @@ def main():
     # Create SQS consumer to process SQS messages
     sqs_run_consumer = sqs_create_consumer(sqs_config, sqs_process_message)
     # Receive, process, and delete SQS message
-    message = sqs_run_consumer()
-    if message:
-        print(f"<< SQS message {message} received")
+    sqs_message = sqs_run_consumer()
+    if sqs_message:
+        print(f"<< SQS message {sqs_message} received")
     else:
         print("<< SQS empty response")
 

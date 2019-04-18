@@ -6,7 +6,8 @@ from sqs.producer import sqs_send_message
 
 @fixture
 def sqs_message():
-    return {"name": "Vlad"}
+    sqs_message = {"name": "Vlad"}
+    return sqs_message
 
 
 @patch("boto3.client")
