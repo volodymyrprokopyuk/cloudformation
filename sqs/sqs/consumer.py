@@ -12,9 +12,10 @@ SQS_RECEIVE_MESSAGE_DELAY_SECONDS = 5
 def sqs_create_consumer(sqs_config, sqs_process_message):
     """
         Create SQS consumer configured with `sqs_config` for processing SQS messages using `sqs_process_message`
-        function. The function delays the next SQS.ReceiveMessage call by `sqs_config.sqs_receive_message_delay_seconds`
-        if the previos call returnted an empty response. The function deletes the message on failure when the
-        `sqs_config.sqs_max_message_retries` has been exceeded
+        function. The function delays the next SQS.ReceiveMessage call by
+        `sqs_config["sqs_receive_message_delay_seconds"]` if the previos call returnted an empty response. The function
+        deletes the message on failure when the `sqs_config["sqs_max_message_retries"]` has been exceeded and reraises
+        the error
 
         Input
             - sqs_config
@@ -39,7 +40,7 @@ def sqs_create_consumer(sqs_config, sqs_process_message):
         nonlocal sqs_was_empty_response
         if sqs_was_empty_response:
             # Delay the next SQS.ReceiveMessage call if the previos call returned an empty response
-            sleep(sqs_config.sqs_receive_message_delay_seconds)
+            sleep(sqs_config["sqs_receive_message_delay_seconds"])
             sqs_was_empty_response = False
         # Perform the SQS.ReceiveMessage call
         response = sqs.receive_message(
@@ -54,17 +55,17 @@ def sqs_create_consumer(sqs_config, sqs_process_message):
             receipt_handle = sqs_message["ReceiptHandle"]
             payload = json.loads(sqs_message["Body"])
             sent_timestamp = sqs_message["Attributes"]["SentTimestamp"]
-            receive_count = sqs_message["Attributes"]["ApproximateReceiveCount"]
+            receive_count = int(sqs_message["Attributes"]["ApproximateReceiveCount"])
             try:
                 # Process the SQS message
                 sqs_process_message(payload)
                 # Delete the SQS message after succesfull processing
                 sqs.delete_message(QueueUrl=sqs_config["sqs_url"], ReceiptHandle=receipt_handle)
             except Exception as error:
-                if receive_count > sqs_config["sqs_max_message_retries"]:
+                if receive_count >= sqs_config["sqs_max_message_retries"]:
                     # Delete the SQS message on SQS message processing failure if the the
-                    # `sqs_config.sqs_max_message_retries` has been exceeded
-                    sqs.delete_message(QueueUrl=sqs_config.sqs_url, ReceiptHandle=receipt_handle)
+                    # `sqs_config["sqs_max_message_retries"]` has been exceeded
+                    sqs.delete_message(QueueUrl=sqs_config["sqs_url"], ReceiptHandle=receipt_handle)
                 raise error
             # Format the SQS message paload along with metadata to be returned to the caller
             message = {"payload": payload, "meta": {
