@@ -19,7 +19,7 @@ Parameters:
         Type: String
         Default: vprokopy
     UserData:
-        Description: EC2 UserData Bash startup script
+        Description: EC2 UserData startup Bash script
         Type: String
 Resources:
     # VPC
