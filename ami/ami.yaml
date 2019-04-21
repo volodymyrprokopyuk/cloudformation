@@ -1,10 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-    aws cloudformation validate-template --template-body file://$(pwd)/ami.yaml
-    aws cloudformation create-stack --stack-name VladStack --template-body file://$(pwd)/ami.yaml --parameters ParameterKey=UserData,ParameterValue=$(base64 -w0 ec2-user-data.sh)
-    aws cloudformation update-stack --stack-name VladStack --template-body file://$(pwd)/ami.yaml --parameters ParameterKey=UserData,ParameterValue=$(base64 -w0 ec2-user-data.sh)
-    aws cloudformation delete-stack --stack-name VladStack
+    Create AMI with NGINX
 Parameters:
     ImageId:
         Description: EC2 image ID
@@ -18,6 +15,7 @@ Parameters:
         Description: SSH key name to access EC2
         Type: String
         Default: vprokopy
+    # To be commented when using AMI with already configured EC2 instance
     UserData:
         Description: EC2 UserData startup Bash script
         Type: String
@@ -42,7 +40,7 @@ Resources:
             MapPublicIpOnLaunch: true
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-Public
+                  Value: !Sub ${AWS::StackName}-PublicSubnet
     # InternetGateway
     InternetGateway:
         Type: AWS::EC2::InternetGateway
@@ -58,7 +56,7 @@ Resources:
             VpcId: !Ref Vpc
             Tags:
                 - Key: Name
-                  Value: Public
+                  Value: PublicRouteTable
     PublicRoute1:
         Type: AWS::EC2::Route
         Properties:
@@ -108,13 +106,14 @@ Resources:
             ImageId: !Ref ImageId
             InstanceType: !Ref InstanceType
             KeyName: !Ref KeyName
+            # To be commented when using AMI with already configured EC2 instance
             UserData: !Ref UserData
             SecurityGroupIds:
                 - !GetAtt PublicSecurityGroup.GroupId
             SubnetId: !Ref PublicSubnet
             Tags:
                 - Key: Name
-                  Value: PublicEc2
+                  Value: !Sub ${AWS::StackName}-Ec2ForAmi
 Outputs:
     # VPC
     VpcId:
