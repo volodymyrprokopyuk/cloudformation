@@ -41,8 +41,8 @@ def get_config():
     _GLOBAL_CONFIG.update(env_specific_config)
     # Return a single Python dictionary with the configuration options from all configuration sources
     #     - Command line options and parameters
-    #     - Configuration files
     #     - Environment variables
+    #     - Configuration files
     #     - Configuration server REST calls
-    #     = Secure vaults
+    #     = Credentials and secrets from a secure vaults
     return _GLOBAL_CONFIG
