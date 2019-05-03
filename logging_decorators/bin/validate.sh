@@ -2,9 +2,9 @@
 
 set -eux
 
-TARGET=main.py
+SOURCE=*.py
+LINE_LENGTH=88
 
-flake8 $TARGET
-bandit $TARGET
-radon cc $TARGET
-pylint --max-line-length=120 $TARGET
+black --line-length $LINE_LENGTH --check $SOURCE
+flake8 --max-line-length=$LINE_LENGTH $SOURCE
+pylint --max-line-length=$LINE_LENGTH --exit-zero $SOURCE
