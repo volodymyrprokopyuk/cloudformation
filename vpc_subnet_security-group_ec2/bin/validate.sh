@@ -2,4 +2,6 @@
 
 set -eux
 
-aws cloudformation validate-template --template-body file://$(pwd)/vpc_subnet_security-group_ec2.yaml
+TEMPLATE=vpc_subnet_security-group_ec2.yaml
+
+aws cloudformation validate-template --template-body file://$(pwd)/$TEMPLATE

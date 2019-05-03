@@ -2,11 +2,12 @@
 
 set -eux
 
+TEMPLATE=iam_security-group.yaml
 SOURCE=*.py
 LINE_LENGTH=88
 
 # Validate CloudFormation Stack definition
-aws cloudformation validate-template --template-body file://$(pwd)/iam_security-group.yaml
+aws cloudformation validate-template --template-body file://$(pwd)/$TEMPLATE
 
 # Validate Python code
 black --line-length $LINE_LENGTH --check $SOURCE

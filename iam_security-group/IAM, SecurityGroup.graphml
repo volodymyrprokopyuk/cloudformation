@@ -85,14 +85,15 @@ Use EC2 iptables/pf for QoS and DPI<y:LabelModel>
     <node id="n2">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="97.8125" width="127.6015625" x="165.0" y="960.6171875"/>
+          <y:Geometry height="111.78125" width="162.5234375" x="147.5390625" y="953.6328125"/>
           <y:Fill color="#FFCC99" transparent="false"/>
           <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="87.8125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="117.6015625" x="5.0" y="5.0">PublicIngressRule1
+          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="101.78125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="152.5234375" x="5.0" y="5.0">PublicIngressRule1
 - IpProtocol
 - FromPort
 - ToPort
-- CidrIp | IP | SG
+- CidrIp
+* SourceSecurityGroupId
 * GroupId<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
@@ -107,14 +108,15 @@ Use EC2 iptables/pf for QoS and DPI<y:LabelModel>
     <node id="n3">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="97.8125" width="124.0390625" x="417.98046875" y="960.6171875"/>
+          <y:Geometry height="111.78125" width="162.5234375" x="398.73828125" y="953.6328125"/>
           <y:Fill color="#FFCC99" transparent="false"/>
           <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="87.8125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="114.0390625" x="5.0" y="5.0">PublicEgressRule1
+          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="101.78125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="152.5234375" x="5.0" y="5.0">PublicEgressRule1
 - IpProtocol
 - FromPort
 - ToPort
-- CidrIp | IP | SG
+- CidrIp
+* SourceSecurityGroupId
 * GroupId<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>

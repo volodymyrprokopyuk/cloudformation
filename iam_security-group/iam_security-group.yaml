@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-    Upload EC2 metadata to S3 bucket
+    Upload EC2 metadata to S3 Bucket using IAM Role
 Parameters:
     ImageId:
         Description: EC2 image ID

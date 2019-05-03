@@ -1,10 +1,8 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-    aws cloudformation validate-template --template-body file://$(pwd)/vpc_subnet_security-group_ec2.yaml
-    aws cloudformation create-stack --stack-name VladStack --template-body file://$(pwd)/vpc_subnet_security-group_ec2.yaml
-    aws cloudformation update-stack --stack-name VladStack --template-body file://$(pwd)/vpc_subnet_security-group_ec2.yaml
-    aws cloudformation delete-stack --stack-name VladStack
+    Create a VPC with a PublicSubnet, InternetGateway and a PrivateSubnet, NatGateway.
+    SSH from the Internet into the public EC2 and from there SSH into the private EC2
 Parameters:
     ImageId:
         Description: EC2 image ID
@@ -167,7 +165,8 @@ Resources:
             IpProtocol: tcp
             FromPort: 22
             ToPort: 22
-            CidrIp: 0.0.0.0/0
+            # Allow SSH traffic from public EC2
+            SourceSecurityGroupId: !Ref PublicSecurityGroup
     # Private EC2
     PrivateEc2:
         Type: AWS::EC2::Instance
