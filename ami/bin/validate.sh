@@ -2,4 +2,6 @@
 
 set -eux
 
-aws cloudformation validate-template --template-body file://$(pwd)/ami.yaml
+TEMPLATE=ami.yaml
+
+aws cloudformation validate-template --template-body file://$(pwd)/$TEMPLATE
