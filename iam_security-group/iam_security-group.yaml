@@ -197,9 +197,9 @@ Outputs:
         Description: EC2 metadata S3 Bucket name
         Value: !Ref Ec2MetadataS3Bucket
     # IAM Role
-    Ec2MetadataToS3IamRole:
+    Ec2MetadataToS3IamRoleName:
         Description: EC2 metadata to S3 IAM Role name
         Value: !Ref Ec2MetadataToS3IamRole
-    Ec2MetadataToS3IamPolicy:
+    Ec2MetadataToS3IamManagedPolicyArn:
         Description: EC2 metadata to S3 IAM ManagedPolicy ARN
         Value: !Ref Ec2MetadataToS3IamPolicy
