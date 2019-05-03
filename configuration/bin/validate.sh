@@ -3,8 +3,8 @@
 set -eux
 
 SOURCE=*.py
+LINE_LENGTH=88
 
-flake8 $SOURCE
-bandit $SOURCE
-radon cc $SOURCE
-pylint --max-line-length=120 $SOURCE || true
+black --line-length $LINE_LENGTH --check $SOURCE
+flake8 --max-line-length=$LINE_LENGTH $SOURCE
+pylint --max-line-length=$LINE_LENGTH --exit-zero $SOURCE

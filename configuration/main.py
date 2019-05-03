@@ -1,5 +1,6 @@
 """Use `config` module and `get_config` function"""
 from functools import wraps
+
 # The `get_config()` function is the only configuration interface for all modules
 from config import get_config
 
@@ -10,12 +11,15 @@ GLOBAL_CONFIG = get_config()
 
 def decorator_needs_config(config):
     """Decorator with a parameter `config` that is used for configuration purposes"""
+
     def decorator(original):
         @wraps(original)
         def decorated(*args, **kwargs):
             print(f"Decorator configuration: {config}")
             return original(*args, **kwargs)
+
         return decorated
+
     return decorator
 
 
@@ -30,7 +34,10 @@ class ClassNeedsConfig:
     """Class is configured via the constructor call"""
 
     def __init__(self, config):
-        """Store the class configuration provided in a constructor call in an instance varaible"""
+        """
+            Store the class configuration provided in a constructor call in an instance
+            varaible
+        """
         self.config = config
 
     def show_config(self):
