@@ -86,6 +86,7 @@ def with_execution_environment(original):
         function
     """
 
+    @wraps(original)
     def decorated(logger, *args, **kwargs):
         # Retrieve the environment name form the environment
         environment = "DEV"
@@ -113,6 +114,7 @@ def with_execution_environment(original):
 def with_execution_context(original):
     """Attach the execution context parameters to the Logger of the original function"""
 
+    @wraps(original)
     def decorated(logger, request, *args, **kwargs):
         # Retrieve the CandidateId from the request
         candidate_id = request["candidate_id"]
