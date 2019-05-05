@@ -17,7 +17,9 @@ def sqs_success_response():
 
 
 @patch("boto3.client")
-def test_sqs_send_message_success(mocked_boto3_client, sqs_message_payload, sqs_success_response):
+def test_sqs_send_message_success(
+    mocked_boto3_client, sqs_message_payload, sqs_success_response
+):
     expected_message_id = sqs_success_response["MessageId"]
     mocked_sqs_client = MagicMock()
     mocked_sqs_client.send_message.return_value = sqs_success_response

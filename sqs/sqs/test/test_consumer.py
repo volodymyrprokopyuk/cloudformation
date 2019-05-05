@@ -10,7 +10,7 @@ def sqs_config():
     sqs_config = {
         "sqs_url": "SQS_URL",
         "sqs_max_message_retries": 3,
-        "sqs_receive_message_delay_seconds": 5
+        "sqs_receive_message_delay_seconds": 5,
     }
     return sqs_config
 
@@ -23,29 +23,37 @@ def sqs_message_payload():
 
 @fixture
 def sqs_success_response(sqs_message_payload):
-    sqs_response = {"Messages": [{
-        "MessageId": 1,
-        "ReceiptHandle": "ReceiptHandle",
-        "Body": json.dumps(sqs_message_payload),
-        "Attributes": {
-            "SentTimestamp": "SentTimestamp",
-            "ApproximateReceiveCount": "1"
-        }
-    }]}
+    sqs_response = {
+        "Messages": [
+            {
+                "MessageId": 1,
+                "ReceiptHandle": "ReceiptHandle",
+                "Body": json.dumps(sqs_message_payload),
+                "Attributes": {
+                    "SentTimestamp": "SentTimestamp",
+                    "ApproximateReceiveCount": "1",
+                },
+            }
+        ]
+    }
     return sqs_response
 
 
 @fixture
 def sqs_max_message_retries_exceeded_response(sqs_message_payload):
-    sqs_response = {"Messages": [{
-        "MessageId": 1,
-        "ReceiptHandle": "ReceiptHandle",
-        "Body": json.dumps(sqs_message_payload),
-        "Attributes": {
-            "SentTimestamp": "SentTimestamp",
-            "ApproximateReceiveCount": "3"
-        }
-    }]}
+    sqs_response = {
+        "Messages": [
+            {
+                "MessageId": 1,
+                "ReceiptHandle": "ReceiptHandle",
+                "Body": json.dumps(sqs_message_payload),
+                "Attributes": {
+                    "SentTimestamp": "SentTimestamp",
+                    "ApproximateReceiveCount": "3",
+                },
+            }
+        ]
+    }
     return sqs_response
 
 
@@ -56,7 +64,9 @@ def sqs_empty_response():
 
 
 @patch("boto3.client")
-def test_sqs_create_consumer_success(mocked_boto3_client, sqs_config, sqs_success_response):
+def test_sqs_create_consumer_success(
+    mocked_boto3_client, sqs_config, sqs_success_response
+):
     sqs_expected_message = sqs_success_response["Messages"][0]
     sqs_expected_message_payload = json.loads(sqs_expected_message["Body"])
     mocked_sqs_client = MagicMock()
@@ -75,12 +85,14 @@ def test_sqs_create_consumer_success(mocked_boto3_client, sqs_config, sqs_succes
 
 @patch("boto3.client")
 def test_sqs_create_consumer_max_message_retries_exceeded_failure(
-        mocked_boto3_client, sqs_config, sqs_max_message_retries_exceeded_response
+    mocked_boto3_client, sqs_config, sqs_max_message_retries_exceeded_response
 ):
     sqs_expected_message = sqs_max_message_retries_exceeded_response["Messages"][0]
     sqs_expected_message_payload = json.loads(sqs_expected_message["Body"])
     mocked_sqs_client = MagicMock()
-    mocked_sqs_client.receive_message.return_value = sqs_max_message_retries_exceeded_response
+    mocked_sqs_client.receive_message.return_value = (
+        sqs_max_message_retries_exceeded_response
+    )
     mocked_boto3_client.return_value = mocked_sqs_client
     mocked_sqs_process_message = MagicMock()
     mocked_sqs_process_message.side_effect = Exception("SQS process message failure")
@@ -96,12 +108,16 @@ def test_sqs_create_consumer_max_message_retries_exceeded_failure(
 
 @patch("boto3.client")
 def test_sqs_create_consumer_receive_message_delay(
-        mocked_boto3_client, sqs_config, sqs_empty_response, sqs_success_response
+    mocked_boto3_client, sqs_config, sqs_empty_response, sqs_success_response
 ):
     sqs_expected_message = sqs_success_response["Messages"][0]
     sqs_expected_message_payload = json.loads(sqs_expected_message["Body"])
     mocked_sqs_client = MagicMock()
-    mocked_sqs_client.receive_message.side_effect = [sqs_empty_response, sqs_success_response, sqs_success_response]
+    mocked_sqs_client.receive_message.side_effect = [
+        sqs_empty_response,
+        sqs_success_response,
+        sqs_success_response,
+    ]
     mocked_boto3_client.return_value = mocked_sqs_client
     mocked_sqs_process_message = MagicMock()
     sqs_run_consumer = sqs_create_consumer(sqs_config, mocked_sqs_process_message)
@@ -112,7 +128,7 @@ def test_sqs_create_consumer_receive_message_delay(
     mocked_sqs_client.receive_message.assert_called_once()
     assert not mocked_sqs_process_message.called
     assert not mocked_sqs_client.delete_message.called
-    assert sqs_message == None
+    assert sqs_message is None
 
     # Second SQS.ReceiveMessage call
     start_ts = time.time()
