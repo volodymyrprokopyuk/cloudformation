@@ -26,9 +26,9 @@ def _get_env_specific_config():
 
 def get_config():
     """
-        Retrieves the configuration from multiple configuration sources. Merges all
-        configuration options into a single Python dictionary. Implementes the Singleton
-        design pattern
+    Retrieves the configuration from multiple configuration sources. Merges all
+    configuration options into a single Python dictionary. Implementes the Singleton
+    design pattern
     """
     # Simple Singleton implementation using only module variables and functions
     global _GLOBAL_CONFIG

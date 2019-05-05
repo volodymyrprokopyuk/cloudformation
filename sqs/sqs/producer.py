@@ -8,8 +8,8 @@ SQS_URL = "https://sqs.eu-central-1.amazonaws.com/059870358805/Vlad-Queue"
 
 def sqs_send_message(sqs_url, message):
     """
-        Send the SQS `message` to the SQS queue identified by the `sqs_url`
-        Return SQS MessageId
+    Send the SQS `message` to the SQS queue identified by the `sqs_url` Return SQS
+    MessageId
     """
     sqs = boto3.client("sqs")
     response = sqs.send_message(QueueUrl=sqs_url, MessageBody=json.dumps(message))

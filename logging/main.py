@@ -7,22 +7,22 @@ from functools import wraps
 
 class JsonFormatter:
     """
-        JsonFormatter converts LogRecord to JSON
+    JsonFormatter converts LogRecord to JSON
 
-        Mandatory LogRecord parameters that will be included into final JSON from the
-        origianl LogRecord
-        - Timestamp
-        - Log level
-        - Logger name
-        - Log message
+    Mandatory LogRecord parameters that will be included into final JSON from the
+    origianl LogRecord
+    - Timestamp
+    - Log level
+    - Logger name
+    - Log message
 
-        Optional LogRecord parameters that will be included into the fina JSON from the
-        execution environment
-        - Environment name
+    Optional LogRecord parameters that will be included into the fina JSON from the
+    execution environment
+    - Environment name
 
-        Optional LogRecord parameters that will be included into the fina JSON from the
-        execution context
-        - CandidateId
+    Optional LogRecord parameters that will be included into the fina JSON from the
+    execution context
+    - CandidateId
     """
 
     # Convert the native Python log levels to the desired and documented log levels
@@ -82,8 +82,7 @@ def with_logger(name):
 
 def with_execution_environment(original):
     """
-        Attach the execution environment parameters to the Logger of the original
-        function
+    Attach the execution environment parameters to the Logger of the original function
     """
 
     @wraps(original)

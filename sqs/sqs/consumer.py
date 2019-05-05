@@ -11,28 +11,28 @@ SQS_RECEIVE_MESSAGE_DELAY_SECONDS = 5
 
 def sqs_create_consumer(sqs_config, sqs_process_message):
     """
-        Create SQS consumer configured with `sqs_config` for processing SQS messages
-        using `sqs_process_message` function. The function delays the next
-        SQS.ReceiveMessage call by `sqs_config["sqs_receive_message_delay_seconds"]` if
-        the previos call returnted an empty response. The function deletes the message
-        on failure when the `sqs_config["sqs_max_message_retries"]` has been exceeded
-        and reraises the error
+    Create SQS consumer configured with `sqs_config` for processing SQS messages
+    using `sqs_process_message` function. The function delays the next
+    SQS.ReceiveMessage call by `sqs_config["sqs_receive_message_delay_seconds"]` if
+    the previos call returnted an empty response. The function deletes the message
+    on failure when the `sqs_config["sqs_max_message_retries"]` has been exceeded
+    and reraises the error
 
-        Input
-            - sqs_config
-                - sqs_url
-                - sqs_max_message_retries
-                - sqs_receive_message_delay_seconds
-            - sqs_process_message(message) - function that processes an SQS message
+    Input
+        - sqs_config
+            - sqs_url
+            - sqs_max_message_retries
+            - sqs_receive_message_delay_seconds
+        - sqs_process_message(message) - function that processes an SQS message
 
-        Output
-            - On receving SQS message from a queue the function returns the SQS message
-              in a format
-                - payload - SQS message JSON
-                - meta.message_id
-                - meta.sent_timestamp
-                - meta.receive_count
-            - On empty reponse from a queue the function returns None
+    Output
+        - On receving SQS message from a queue the function returns the SQS message
+            in a format
+            - payload - SQS message JSON
+            - meta.message_id
+            - meta.sent_timestamp
+            - meta.receive_count
+        - On empty reponse from a queue the function returns None
     """
     sqs = boto3.client("sqs")
     # The is no empty reponse initial
