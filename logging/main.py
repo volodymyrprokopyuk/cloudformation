@@ -48,8 +48,12 @@ class JsonFormatter:
         json_log_record["level"] = JsonFormatter.LOG_LEVEL_MAP.get(log_record.levelname)
         # Logger name
         json_log_record["name"] = log_record.name
-        # Log message
-        json_log_record["message"] = log_record.getMessage()
+        # Log message: single dict argument
+        if isinstance(log_record.msg, dict) and not log_record.args:
+            json_log_record["message"] = log_record.msg
+        # Log message: format string with arguments
+        else:
+            json_log_record["message"] = log_record.getMessage()
         # Add optional JSON attributes from the execution environment and the execution
         # context
         for attribute in JsonFormatter.OPTIONAL_JSON_ATTRIBUTES:
@@ -142,6 +146,7 @@ def with_execution_context(original):
 def process_request(logger, request):
     """Process request"""
     logger.info("Processing request %s", request)
+    logger.info({"request": request})
 
 
 @with_logger(__name__)
