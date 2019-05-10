@@ -93,13 +93,15 @@
     <node id="n4">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="153.6875" width="228.880859375" x="575.5595703125" y="433.15625"/>
+          <y:Geometry height="181.625" width="299.62109375" x="540.189453125" y="419.1875"/>
           <y:Fill color="#CCFFFF" transparent="false"/>
           <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="143.6875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="218.880859375" x="5.0" y="5.0">SQS.ReceiveMessage
+          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="171.625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="289.62109375" x="5.0" y="5.0">SQS.ReceiveMessage
 - QueueUrl
 - MaxNumberOfMessages [1, 10]
-- AttributeNames: [SentTimestamp]
+- AttributeNames: [
+      SentTimestamp, ApproximateReceiveCount
+]
 &lt; MessageId
 &lt; ReceiptHandle (for message ack)
 &lt; MessageBody
@@ -119,7 +121,7 @@
     <node id="n5">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="30.0" width="30.0" x="645.0" y="394.0"/>
+          <y:Geometry height="30.0" width="30.0" x="645.0" y="375.0"/>
           <y:Fill color="#FFFF99" transparent="false"/>
           <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="11.634765625" x="9.1826171875" y="6.015625">3<y:LabelModel>
