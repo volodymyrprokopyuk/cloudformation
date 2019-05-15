@@ -23,4 +23,4 @@ source pyvenv/bin/activate
 pip3 install -r requirements.txt
 
 # Execute CloudWatch logging
-python3 main.py > $LOG_FILE
+python3 main.py > $LOG_FILE 2>&1
