@@ -14,6 +14,9 @@ APP_ROOT=/opt
 APP_PATH=$APP_ROOT/cloudformation/cloudwatch
 APP_LOG=$APP_PATH/cloudwatch-logging.log
 
+# Check EC2 UserData script output
+# cat /var/log/cloud-init-output.log
+
 sudo su
 
 # Install Python 3

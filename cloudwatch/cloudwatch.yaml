@@ -186,9 +186,9 @@ Outputs:
         Description: Public EC2 private IP
         Value: !GetAtt PublicEc2.PrivateIp
     # IAM Role
-    # CloudWatchLoggingIamRoleName:
-    #     Description: CloudWatch logging IAM Role name
-    #     Value: !Ref CloudWatchLoggingIamRole
-    # CloudWatchLoggingIamManagedPolicyArn:
-    #     Description: CloudWatch logging IAM ManagedPolicy ARN
-    #     Value: !Ref CloudWatchLoggingIamPolicy
+    CloudWatchLoggingIamRoleName:
+        Description: CloudWatch logging IAM Role name
+        Value: !Ref CloudWatchLoggingIamRole
+    CloudWatchLoggingIamManagedPolicyArn:
+        Description: CloudWatch logging IAM ManagedPolicy ARN
+        Value: !Ref CloudWatchLoggingIamPolicy
