@@ -45,4 +45,4 @@ $CLOUDWATCH_AGENT_PATH/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 \
 # $CLOUDWATCH_AGENT_PATH/bin/amazon-cloudwatch-agent-ctl -a status
 
 # Execute CloudWatch logging application
-python3 main.py > $APP_LOG 2>&1
+python3 main.py >> $APP_LOG 2>&1
