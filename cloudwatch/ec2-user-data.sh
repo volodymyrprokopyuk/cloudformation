@@ -10,7 +10,8 @@ LOG_FILE=cloudwatch-logging.log
 sudo su
 
 # Install Python 3
-yum install python3 git -y
+yum update -y
+yum install -y python3 git
 
 # Install CloudWatch logging
 mkdir -p $DISTRIBUTION_ROOT
