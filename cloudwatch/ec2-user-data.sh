@@ -2,10 +2,16 @@
 
 set -eu
 
-DISTRIBUTION_ROOT=/opt
-DISTRIBUTION_REPO=https://github.com/volodymyrprokopyuk/cloudformation.git
-DISTRIBUTION_DIR=$DISTRIBUTION_ROOT/cloudformation/cloudwatch
-LOG_FILE=cloudwatch-logging.log
+CLOUDWATCH_AGENT_URL=https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+CLOUDWATCH_AGENT_PACKAGE=${CLOUDWATCH_AGENT_URL##*/}
+CLOUDWATCH_AGENT_PATH=/opt/aws/amazon-cloudwatch-agent
+CLOUDWATCH_AGENT_CONFIG_PATH=$CLOUDWATCH_AGENT_PATH/etc/amazon-cloudwatch-agent.json
+CLOUDWATCH_AGENT_CONFIG_FILE=${CLOUDWATCH_AGENT_CONFIG_PATH##*/}
+
+APP_REPO=https://github.com/volodymyrprokopyuk/cloudformation.git
+APP_ROOT=/opt
+APP_DIR=$APP_ROOT/cloudformation/cloudwatch
+APP_LOG_PATH=$APP_DIR/cloudwatch-logging.log
 
 sudo su
 
@@ -13,15 +19,22 @@ sudo su
 yum update -y
 yum install -y python3 git
 
-# Install CloudWatch logging
-mkdir -p $DISTRIBUTION_ROOT
-cd $DISTRIBUTION_ROOT
-git clone $DISTRIBUTION_REPO
+# Install unified CloudWatch agent
+curl -O $CLOUDWATCH_AGENT_URL
+rpm -U ./$CLOUDWATCH_AGENT_PACKAGE
+cp $APP_DIR/$CLOUDWATCH_AGENT_CONFIG_FILE $CLOUDWATCH_AGENT_CONFIG_PATH
+$CLOUDWATCH_AGENT_PATH/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 \
+    -c file:$CLOUDWATCH_AGENT_CONFIG_PATH -s
 
-cd $DISTRIBUTION_DIR
+# Install CloudWatch logging application
+mkdir -p $APP_ROOT
+cd $APP_ROOT
+git clone $APP_REPO
+
+cd $APP_DIR
 python3 -m venv pyvenv
 source pyvenv/bin/activate
 pip3 install -r requirements.txt
 
-# Execute CloudWatch logging
-python3 main.py > $LOG_FILE 2>&1
+# Execute CloudWatch logging application
+python3 main.py > $APP_LOG_PATH 2>&1

@@ -92,42 +92,45 @@ Resources:
             ToPort: 22
             CidrIp: 0.0.0.0/0
     # IAM Role
-    # CloudWatchLoggingIamPolicy:
-    #     Type: AWS::IAM::ManagedPolicy
-    #     Properties:
-    #         ManagedPolicyName: CloudWatchLogging
-    #         Description: Grants access to CloudWatch for logging and publishing metrics
-    #         Path: /
-    #         PolicyDocument:
-    #             Version: 2012-10-17
-    #             Statement:
-    #                 - Effect: Allow
-    #                   Action:
-    #                       - s3:PutObject
-    #                   Resource:
-    #                       - !Sub arn:aws:s3:::${Ec2MetadataS3Bucket}/*
-    # CloudWatchLoggingIamRole:
-    #     Type: AWS::IAM::Role
-    #     Properties:
-    #         RoleName: CloudWatchLogging
-    #         Path: /
-    #         AssumeRolePolicyDocument:
-    #             Version: 2012-10-17
-    #             Statement:
-    #                 - Effect: Allow
-    #                   Action:
-    #                       - sts:AssumeRole
-    #                   Principal:
-    #                       Service:
-    #                           - ec2.amazonaws.com
-    #         ManagedPolicyArns:
-    #             - !Ref CloudWatchLoggingIamPolicy
-    # CloudWatchLoggingInstanceProfile:
-    #     Type: AWS::IAM::InstanceProfile
-    #     Properties:
-    #         Path: /
-    #         Roles:
-    #             - !Ref CloudWatchLoggingIamRole
+    CloudWatchLoggingIamPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            ManagedPolicyName: CloudWatchLogging
+            Description: Grants access to CloudWatch for logging and publishing metrics
+            Path: /
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - logs:CreateLogGroup
+                          - logs:CreateLogStream
+                          - logs:DescribeLogStreams
+                          - logs:PutLogEvents
+                      Resource:
+                          - arn:aws:logs:*:*:*
+    CloudWatchLoggingIamRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: CloudWatchLogging
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service:
+                              - ec2.amazonaws.com
+            ManagedPolicyArns:
+                - !Ref CloudWatchLoggingIamPolicy
+    CloudWatchLoggingInstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+            Path: /
+            Roles:
+                - !Ref CloudWatchLoggingIamRole
     # Public EC2
     PublicEc2:
         Type: AWS::EC2::Instance
@@ -137,7 +140,7 @@ Resources:
             KeyName: !Ref KeyName
             # To be commented when using AMI with already configured EC2 instance
             UserData: !Ref UserData
-            # IamInstanceProfile: !Ref CloudWatchInstanceProfile
+            IamInstanceProfile: !Ref CloudWatchLoggingInstanceProfile
             SecurityGroupIds:
                 - !GetAtt PublicSecurityGroup.GroupId
             SubnetId: !Ref PublicSubnet
