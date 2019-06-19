@@ -21,6 +21,8 @@ CREATE TABLE protection_result (
     product_id integer NOT NULL,
     registration_ts timestamptz NOT NULL,
     protection_status protection_status_t NOT NULL,
+    CONSTRAINT uq_protection_result_product_id_registration_ts
+        UNIQUE (product_id, registration_ts),
     CONSTRAINT fk_protection_result_product_id
         FOREIGN KEY (product_id) REFERENCES product (product_id)
         ON DELETE CASCADE ON UPDATE CASCADE
@@ -48,20 +50,20 @@ CREATE TABLE pirate_source (
 
 CREATE TABLE search_engine_pirate_source (
     pirate_source_id integer NOT NULL,
+    CONSTRAINT uq_search_engine_pirate_source_pirate_source_id
+        UNIQUE (pirate_source_id),
     CONSTRAINT fk_search_engine_pirate_source_pirate_source_id
         FOREIGN KEY (pirate_source_id) REFERENCES pirate_source (pirate_source_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT uq_search_engine_pirate_source_pirate_source_id
-        UNIQUE (pirate_source_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE social_media_pirate_source (
     pirate_source_id integer NOT NULL,
+    CONSTRAINT uq_social_media_pirate_source_pirate_source_id
+        UNIQUE (pirate_source_id),
     CONSTRAINT fk_social_media_pirate_source_pirate_source_id
         FOREIGN KEY (pirate_source_id) REFERENCES pirate_source (pirate_source_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT uq_social_media_pirate_source_pirate_source_id
-        UNIQUE (pirate_source_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TYPE infringement_status_t AS
@@ -76,6 +78,8 @@ CREATE TABLE infringement (
     infringement_status infringement_status_t NOT NULL,
     CONSTRAINT pk_infringement
         PRIMARY KEY (infringement_id),
+    CONSTRAINT uq_infringement_product_id_pirate_source_detection_ts_url
+        UNIQUE (product_id, pirate_source_id, detection_ts, infringement_url),
     CONSTRAINT fk_infringement_product_id
         FOREIGN KEY (product_id) REFERENCES product (product_id)
         ON DELETE RESTRICT ON UPDATE RESTRICT,
