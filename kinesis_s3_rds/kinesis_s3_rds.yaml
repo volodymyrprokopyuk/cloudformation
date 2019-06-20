@@ -162,6 +162,31 @@ Resources:
             DBSubnetGroupName: !Ref PublicDbSubnetGroup
             VPCSecurityGroups:
                 - !Ref PublicSecurityGroup
+    # Kinesis Firehose S3 bucket
+    KinesisFirehoseS3Bucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Delete
+        Properties:
+            BucketName: !Sub KinesisFirehoseS3Bucket
+    # Kinesis Firehose delivery stream
+    ProductDeliveryStream:
+        Type: AWS::KinesisFirehose::DeliveryStream
+        Properties:
+            DeliveryStreamName: ProductDeliveryStream
+            DeliveryStreamType: DirectPut
+            S3DestinationConfiguration:
+                BucketARN: !Ref TODO
+                BufferingHints:
+                    SizeInMBs: [60..900]
+                    IntervalInSeconds: [1..128]
+                CloudWatchLoggingOptions:
+                    Enabled: true
+                    LogGroupName: KinesisFirehose_Infringement
+                    LogStreamName: ProductDeliveryStream
+                CompressionFormat: UNCOMPRESSED
+                ErrorOutputPrefix: error
+                Prefix: KinesisFirehose
+                RoleARN: !Ref TODO
 Outputs:
     # VPC
     VpcId:

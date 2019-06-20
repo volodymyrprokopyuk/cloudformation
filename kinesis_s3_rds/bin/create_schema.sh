@@ -13,7 +13,7 @@ case $1 in
         ;;
     *)
         # RDS
-        DB_HOST=vp1kjmzcqjq2bx4.c07z8n4r5v4a.eu-central-1.rds.amazonaws.com
+        DB_HOST=vp1hj931h5catqk.c07z8n4r5v4a.eu-central-1.rds.amazonaws.com
         DB_PORT=5432
         DB_NAME=infringement
         DB_USER=vld
