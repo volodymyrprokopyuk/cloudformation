@@ -1,0 +1,203 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+    Create a VPC with a two PublicSubnets, InternetGateway and public PostgreSQL RDS
+Parameters:
+    DbInstanceClass:
+        Description: Database instance class
+        Type: String
+        Default: db.t2.micro
+    DbMaxSize:
+        Description: Database allocated storage
+        Type: String
+        Default: 5
+    DbEngine:
+        Description: Database engine
+        Type: String
+        Default: postgres
+    DbEngineVersion:
+        Description: Database engine version
+        Type: String
+        Default: 11.2
+    DbUser:
+        Description: Database master user
+        Type: String
+        Default: vld
+    DbPassword:
+        Description: Database master user password
+        Type: String
+        Default: "Password1!"
+    DbPort:
+        Description: Database port
+        Type: String
+        Default: 5432
+    DbName:
+        Description: Database name
+        Type: String
+        Default: infringement
+Resources:
+    # VPC
+    Vpc:
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: 10.1.0.0/16
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            Tags:
+                - Key: Name
+                  Value: !Join ["", [!Ref "AWS::StackName", "-VPC"]]
+    # Public Subnet
+    PublicSubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: 10.1.10.0/24
+            AvailabilityZone: !Select [0, !GetAZs ]
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-Public
+    # InternetGateway
+    InternetGateway:
+        Type: AWS::EC2::InternetGateway
+    GatewayAttachment:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            VpcId: !Ref Vpc
+            InternetGatewayId: !Ref InternetGateway
+    # Public RouteTable
+    PublicRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: Public
+    PublicRoute1:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PublicRouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+    PublicSubnetRouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PublicRouteTable
+            SubnetId: !Ref PublicSubnet
+    # Public SecurityGroup
+    PublicSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: PublicSecurityGroup
+            GroupDescription: Public Security Group
+            VpcId: !Ref Vpc
+    PublicOutboundRule1:
+        Type: AWS::EC2::SecurityGroupEgress
+        Properties:
+            GroupId: !Ref PublicSecurityGroup
+            IpProtocol: "-1"
+            FromPort: 0
+            ToPort: 65535
+            CidrIp: 0.0.0.0/0
+    PublicInboundRule1:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            GroupId: !Ref PublicSecurityGroup
+            IpProtocol: tcp
+            FromPort: !Ref DbPort
+            ToPort: !Ref DbPort
+            CidrIp: 0.0.0.0/0
+    # Public Subnet 2
+    PublicSubnet2:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: 10.1.20.0/24
+            AvailabilityZone: !Select [1, !GetAZs ]
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-Public2
+    # Public RouteTable 2
+    PublicRouteTable2:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: Public2
+    PublicRoute2:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PublicRouteTable2
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+    PublicSubnetRouteTableAssociation2:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PublicRouteTable2
+            SubnetId: !Ref PublicSubnet2
+    # Public PostgreSQL RDS
+    PublicDbSubnetGroup:
+        Type: AWS::RDS::DBSubnetGroup
+        Properties:
+            DBSubnetGroupDescription: "Public DB subnet group"
+            DBSubnetGroupName: !Sub ${AWS::StackName}-PublicDbSubnetGroup
+            SubnetIds:
+                - !Ref PublicSubnet
+                - !Ref PublicSubnet2
+    PublicDbInstance:
+        Type: AWS::RDS::DBInstance
+        DeletionPolicy: Delete
+        Properties:
+            DBInstanceClass: !Ref DbInstanceClass
+            AllocatedStorage: !Ref DbMaxSize
+            Port: !Ref DbPort
+            Engine: !Ref DbEngine
+            EngineVersion: !Ref DbEngineVersion
+            MasterUsername: !Ref DbUser
+            MasterUserPassword: !Ref DbPassword
+            DBName: !Ref DbName
+            DBSubnetGroupName: !Ref PublicDbSubnetGroup
+            VPCSecurityGroups:
+                - !Ref PublicSecurityGroup
+            PubliclyAccessible: true
+Outputs:
+    # VPC
+    VpcId:
+        Description: VPC ID
+        Value: !Ref Vpc
+    VpcCidrBlock:
+        Description: VPC CIDR block
+        Value: !GetAtt Vpc.CidrBlock
+    # Public Subnet
+    PublicSubnetId:
+        Description: Public Subnet ID
+        Value: !Ref PublicSubnet
+    PublicSubnetAvailabilityZone:
+        Description: Public Subnet AvailabilityZone
+        Value: !GetAtt PublicSubnet.AvailabilityZone
+    InternetGatewayId:
+        Description: InternetGateway ID
+        Value: !Ref InternetGateway
+    # Public Subnet2
+    PublicSubnet2Id:
+        Description: Public Subnet 2 ID
+        Value: !Ref PublicSubnet2
+    PublicSubnet2AvailabilityZone:
+        Description: Public Subnet 2 AvailabilityZone
+        Value: !GetAtt PublicSubnet2.AvailabilityZone
+    # Public SecurityGroup
+    PublicSecurityGroupId:
+        Description: Public SecurityGroup ID
+        Value: !Ref PublicSecurityGroup
+    # Public PostgreSQL RDS
+    PublicDbInstanceName:
+        Description: Public DB instance name
+        Value: !Ref PublicDbInstance
+    PublicDbInstanceEndpointAddress:
+        Description: Public DB instance name endpoint address
+        Value: !GetAtt PublicDbInstance.Endpoint.Address
+    PublicDbInstanceEndpointPort:
+        Description: Public DB instance name endpoint port
+        Value: !GetAtt PublicDbInstance.Endpoint.Port
