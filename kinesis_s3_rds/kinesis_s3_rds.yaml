@@ -57,6 +57,17 @@ Resources:
             Tags:
                 - Key: Name
                   Value: !Sub ${AWS::StackName}-Public
+    # Public Subnet 2
+    PublicSubnet2:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: 10.1.20.0/24
+            AvailabilityZone: !Select [1, !GetAZs ]
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-Public2
     # InternetGateway
     InternetGateway:
         Type: AWS::EC2::InternetGateway
@@ -84,6 +95,25 @@ Resources:
         Properties:
             RouteTableId: !Ref PublicRouteTable
             SubnetId: !Ref PublicSubnet
+    # Public RouteTable 2
+    PublicRouteTable2:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: Public2
+    PublicRoute2:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PublicRouteTable2
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+    PublicSubnetRouteTableAssociation2:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PublicRouteTable2
+            SubnetId: !Ref PublicSubnet2
     # Public SecurityGroup
     PublicSecurityGroup:
         Type: AWS::EC2::SecurityGroup
@@ -107,36 +137,6 @@ Resources:
             FromPort: !Ref DbPort
             ToPort: !Ref DbPort
             CidrIp: 0.0.0.0/0
-    # Public Subnet 2
-    PublicSubnet2:
-        Type: AWS::EC2::Subnet
-        Properties:
-            VpcId: !Ref Vpc
-            CidrBlock: 10.1.20.0/24
-            AvailabilityZone: !Select [1, !GetAZs ]
-            MapPublicIpOnLaunch: true
-            Tags:
-                - Key: Name
-                  Value: !Sub ${AWS::StackName}-Public2
-    # Public RouteTable 2
-    PublicRouteTable2:
-        Type: AWS::EC2::RouteTable
-        Properties:
-            VpcId: !Ref Vpc
-            Tags:
-                - Key: Name
-                  Value: Public2
-    PublicRoute2:
-        Type: AWS::EC2::Route
-        Properties:
-            RouteTableId: !Ref PublicRouteTable2
-            DestinationCidrBlock: 0.0.0.0/0
-            GatewayId: !Ref InternetGateway
-    PublicSubnetRouteTableAssociation2:
-        Type: AWS::EC2::SubnetRouteTableAssociation
-        Properties:
-            RouteTableId: !Ref PublicRouteTable2
-            SubnetId: !Ref PublicSubnet2
     # Public PostgreSQL RDS
     PublicDbSubnetGroup:
         Type: AWS::RDS::DBSubnetGroup
@@ -158,10 +158,10 @@ Resources:
             MasterUsername: !Ref DbUser
             MasterUserPassword: !Ref DbPassword
             DBName: !Ref DbName
+            PubliclyAccessible: true
             DBSubnetGroupName: !Ref PublicDbSubnetGroup
             VPCSecurityGroups:
                 - !Ref PublicSecurityGroup
-            PubliclyAccessible: true
 Outputs:
     # VPC
     VpcId:
