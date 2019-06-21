@@ -3,6 +3,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
     Create a VPC with a two PublicSubnets, InternetGateway and public PostgreSQL RDS
 Parameters:
+    # RDS
     DbInstanceClass:
         Description: Database instance class
         Type: String
@@ -35,6 +36,20 @@ Parameters:
         Description: Database name
         Type: String
         Default: infringement
+    # S3
+    KinesisFirehoseDeliveryS3BucketName:
+        Description: Kinesis Firehose delivery S3 bucket name
+        Type: String
+        Default: kinesis-firehose-delivery
+    # KinesisFirehose
+    KinesisFirehoseBufferSizeMb:
+        Description: Kinesis Firehose buffer size in MB
+        Type: String
+        Default: 1
+    KinesisFirehoseBufferIntervalSec:
+        Description: Kinesis Firehose buffer interval in sec
+        Type: String
+        Default: 60
 Resources:
     # VPC
     Vpc:
@@ -163,11 +178,54 @@ Resources:
             VPCSecurityGroups:
                 - !Ref PublicSecurityGroup
     # Kinesis Firehose S3 bucket
-    KinesisFirehoseS3Bucket:
+    KinesisFirehoseDeliveryS3Bucket:
         Type: AWS::S3::Bucket
         DeletionPolicy: Delete
         Properties:
-            BucketName: !Sub KinesisFirehoseS3Bucket
+            BucketName: !Sub ${AWS::StackName}-${KinesisFirehoseDeliveryS3BucketName}
+    # IAM Role
+    KinesisFirehoseDeliveryIamPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            ManagedPolicyName: KinesisFirehoseDeliveryIamPolicy
+            Description: Grants access to KinesisFirehose to upload data to S3
+            Path: /
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    # S3
+                    - Effect: Allow
+                      Action:
+                          - s3:GetBucketLocation
+                          - s3:ListBucket
+                          - s3:PutObject
+                          - s3:GetObject
+                          - s3:ListBucketMultipartUploads
+                          - s3:AbortMultipartUpload
+                      Resource:
+                          - !Sub arn:aws:s3:::${KinesisFirehoseDeliveryS3Bucket}/*
+                    # CloudWatch
+                    - Effect: Allow
+                      Action:
+                          - logs:PutLogEvents
+                      Resource:
+                          - !Sub arn:aws:logs:*:*:*
+    KinesisFirehoseDeliveryIamRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: KinesisFirehoseDeliveryIamRole
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service:
+                              - firehose.amazonaws.com
+            ManagedPolicyArns:
+                - !Ref KinesisFirehoseDeliveryIamPolicy
     # Kinesis Firehose delivery stream
     ProductDeliveryStream:
         Type: AWS::KinesisFirehose::DeliveryStream
@@ -175,18 +233,18 @@ Resources:
             DeliveryStreamName: ProductDeliveryStream
             DeliveryStreamType: DirectPut
             S3DestinationConfiguration:
-                BucketARN: !Ref TODO
+                BucketARN: !GetAtt KinesisFirehoseDeliveryS3Bucket.Arn
                 BufferingHints:
-                    SizeInMBs: [60..900]
-                    IntervalInSeconds: [1..128]
+                    SizeInMBs: !Ref KinesisFirehoseBufferSizeMb
+                    IntervalInSeconds: !Ref KinesisFirehoseBufferIntervalSec
                 CloudWatchLoggingOptions:
                     Enabled: true
                     LogGroupName: KinesisFirehose_Infringement
                     LogStreamName: ProductDeliveryStream
                 CompressionFormat: UNCOMPRESSED
-                ErrorOutputPrefix: error
-                Prefix: KinesisFirehose
-                RoleARN: !Ref TODO
+                Prefix: KinesisFirehose/
+                ErrorOutputPrefix: error/
+                RoleARN: !GetAtt KinesisFirehoseDeliveryIamRole.Arn
 Outputs:
     # VPC
     VpcId:
@@ -202,9 +260,6 @@ Outputs:
     PublicSubnetAvailabilityZone:
         Description: Public Subnet AvailabilityZone
         Value: !GetAtt PublicSubnet.AvailabilityZone
-    InternetGatewayId:
-        Description: InternetGateway ID
-        Value: !Ref InternetGateway
     # Public Subnet2
     PublicSubnet2Id:
         Description: Public Subnet 2 ID
@@ -212,6 +267,9 @@ Outputs:
     PublicSubnet2AvailabilityZone:
         Description: Public Subnet 2 AvailabilityZone
         Value: !GetAtt PublicSubnet2.AvailabilityZone
+    InternetGatewayId:
+        Description: InternetGateway ID
+        Value: !Ref InternetGateway
     # Public SecurityGroup
     PublicSecurityGroupId:
         Description: Public SecurityGroup ID
@@ -226,3 +284,11 @@ Outputs:
     PublicDbInstanceEndpointPort:
         Description: Public DB instance name endpoint port
         Value: !GetAtt PublicDbInstance.Endpoint.Port
+    # S3
+    KinesisFirehoseDeliveryS3BucketName:
+        Description: Kinesis Firehose delivery S3 bucket name
+        Value: !Ref KinesisFirehoseDeliveryS3Bucket
+    # KinesisFirehose
+    ProductDeliveryStreamName:
+        Description: Product delivery stream name
+        Value: !Ref ProductDeliveryStream
