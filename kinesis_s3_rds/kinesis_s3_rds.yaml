@@ -226,7 +226,7 @@ Resources:
                               - firehose.amazonaws.com
             ManagedPolicyArns:
                 - !Ref KinesisFirehoseDeliveryIamPolicy
-    # Kinesis Firehose delivery stream
+    # Kinesis Firehose delivery streams
     ProductDeliveryStream:
         Type: AWS::KinesisFirehose::DeliveryStream
         Properties:
@@ -237,14 +237,32 @@ Resources:
                 BufferingHints:
                     SizeInMBs: !Ref KinesisFirehoseBufferSizeMb
                     IntervalInSeconds: !Ref KinesisFirehoseBufferIntervalSec
+                CompressionFormat: UNCOMPRESSED
+                Prefix: product/
+                ErrorOutputPrefix: product-error/
+                RoleARN: !GetAtt KinesisFirehoseDeliveryIamRole.Arn
                 CloudWatchLoggingOptions:
                     Enabled: true
-                    LogGroupName: KinesisFirehose_Infringement
+                    LogGroupName: KinesisFirehoseDeliveryGroup
                     LogStreamName: ProductDeliveryStream
+    InfringementDeliveryStream:
+        Type: AWS::KinesisFirehose::DeliveryStream
+        Properties:
+            DeliveryStreamName: InfringementDeliveryStream
+            DeliveryStreamType: DirectPut
+            S3DestinationConfiguration:
+                BucketARN: !GetAtt KinesisFirehoseDeliveryS3Bucket.Arn
+                BufferingHints:
+                    SizeInMBs: !Ref KinesisFirehoseBufferSizeMb
+                    IntervalInSeconds: !Ref KinesisFirehoseBufferIntervalSec
                 CompressionFormat: UNCOMPRESSED
-                Prefix: KinesisFirehose/
-                ErrorOutputPrefix: error/
+                Prefix: infringement/
+                ErrorOutputPrefix: infringement-error/
                 RoleARN: !GetAtt KinesisFirehoseDeliveryIamRole.Arn
+                CloudWatchLoggingOptions:
+                    Enabled: true
+                    LogGroupName: KinesisFirehoseDeliveryGroup
+                    LogStreamName: InfringementDeliveryStream
 Outputs:
     # VPC
     VpcId:
