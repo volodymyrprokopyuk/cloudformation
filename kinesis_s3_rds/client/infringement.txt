@@ -1,2 +1,2 @@
-{"surname":"Prokopyuk"}
-{"surname":"Fedoriv"}
+{"product_external_id": "PROD001", "pirate_source_external_id": "PSRC001", "detection_ts": "2019-06-21 16:07:13+02", "infringement_url": "https://www.pirate1.com/movies/1", "infringement_status": "ACTIVE"}
+{"product_external_id": "PROD001", "pirate_source_external_id": "PSRC001", "detection_ts": "2019-06-21 16:07:13+02", "infringement_url": "https://www.pirate1.com/movies/1", "infringement_status": "ACTIVE"}
