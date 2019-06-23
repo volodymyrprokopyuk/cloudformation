@@ -13,6 +13,7 @@ function create_and_upload_lambda_archive_to_s3 {
     local lambda_version=$(cat $lambda_dir/version)
     local lambda_archive=$lambda_dir/${lambda_name}-${lambda_version}.zip
     local deps_dir=$lambda_dir/$PYVENV/lib/python3.7/site-packages
+    rm -rf $lambda_archive
     # Install lambda dependencies
     cd $lambda_dir
     deactivate

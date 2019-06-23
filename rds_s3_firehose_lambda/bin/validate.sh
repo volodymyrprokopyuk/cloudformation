@@ -9,8 +9,7 @@ readonly PY_SOURCE="client/*.py lambda/*/*.py"
 readonly PY_TEST_SOURCE="client/test/*.py lambda/*/test/*.py"
 
 # Validate CloudFormation stack template
-aws cloudformation validate-template --template-body file://$CF_RDS_S3_FIREHOSE_TEMPLATE
-aws cloudformation validate-template --template-body file://$CF_LAMBDA_S3_TEMPLATE
+aws cloudformation validate-template --template-body file://$CF_TEMPLATE
 
 # Validate Python source code
 black --line-length $LINE_LENGTH --check $PY_SOURCE
