@@ -2,14 +2,16 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
     Create a VPC with a two PublicSubnets, InternetGateway and public PostgreSQL RDS
+    Create Kinesis Firehose delivery streams with associated S3 bucket
+    Create S3 bucket for Lambda packages
 Parameters:
     # RDS
     DbInstanceClass:
         Description: Database instance class
         Type: String
         Default: db.t2.micro
-    DbMaxSize:
-        Description: Database allocated storage
+    DbMaxAllocatedStorage:
+        Description: Database maximal allocated storage
         Type: String
         Default: 5
     DbEngine:
@@ -20,33 +22,31 @@ Parameters:
         Description: Database engine version
         Type: String
         Default: 11.2
-    DbUser:
-        Description: Database master user
-        Type: String
-        Default: vld
-    DbPassword:
-        Description: Database master user password
-        Type: String
-        Default: "Password1!"
     DbPort:
         Description: Database port
         Type: String
-        Default: 5432
     DbName:
         Description: Database name
         Type: String
-        Default: infringement
-    # S3
-    KinesisFirehoseDeliveryS3BucketName:
-        Description: Kinesis Firehose delivery S3 bucket name
+    DbUser:
+        Description: Database master user
         Type: String
-        Default: kinesis-firehose-delivery
-    # KinesisFirehose
-    KinesisFirehoseBufferSizeMb:
+    DbPassword:
+        Description: Database master user password
+        Type: String
+    # S3
+    FirehoseDeliveryStreamS3BucketName:
+        Description: Kinesis Firehose delivery stream S3 bucket name
+        Type: String
+    LambdaPackageS3BucketName:
+        Description: Lambda package S3 bucket name
+        Type: String
+    # Kinesis Firehose
+    FirehoseBufferSizeMb:
         Description: Kinesis Firehose buffer size in MB
         Type: String
         Default: 1
-    KinesisFirehoseBufferIntervalSec:
+    FirehoseBufferIntervalSec:
         Description: Kinesis Firehose buffer interval in sec
         Type: String
         Default: 60
@@ -60,7 +60,7 @@ Resources:
             EnableDnsHostnames: true
             Tags:
                 - Key: Name
-                  Value: !Join ["", [!Ref "AWS::StackName", "-VPC"]]
+                  Value: !Sub ${AWS::StackName}-Vpc
     # Public Subnet
     PublicSubnet:
         Type: AWS::EC2::Subnet
@@ -71,7 +71,7 @@ Resources:
             MapPublicIpOnLaunch: true
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-Public
+                  Value: !Sub ${AWS::StackName}-PublicSubnet
     # Public Subnet 2
     PublicSubnet2:
         Type: AWS::EC2::Subnet
@@ -82,7 +82,7 @@ Resources:
             MapPublicIpOnLaunch: true
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-Public2
+                  Value: !Sub ${AWS::StackName}-PublicSubnet2
     # InternetGateway
     InternetGateway:
         Type: AWS::EC2::InternetGateway
@@ -98,7 +98,7 @@ Resources:
             VpcId: !Ref Vpc
             Tags:
                 - Key: Name
-                  Value: Public
+                  Value: PublicRouteTable
     PublicRoute1:
         Type: AWS::EC2::Route
         Properties:
@@ -117,7 +117,7 @@ Resources:
             VpcId: !Ref Vpc
             Tags:
                 - Key: Name
-                  Value: Public2
+                  Value: PublicRouteTable2
     PublicRoute2:
         Type: AWS::EC2::Route
         Properties:
@@ -166,7 +166,7 @@ Resources:
         DeletionPolicy: Delete
         Properties:
             DBInstanceClass: !Ref DbInstanceClass
-            AllocatedStorage: !Ref DbMaxSize
+            AllocatedStorage: !Ref DbMaxAllocatedStorage
             Port: !Ref DbPort
             Engine: !Ref DbEngine
             EngineVersion: !Ref DbEngineVersion
@@ -177,18 +177,18 @@ Resources:
             DBSubnetGroupName: !Ref PublicDbSubnetGroup
             VPCSecurityGroups:
                 - !Ref PublicSecurityGroup
-    # Kinesis Firehose S3 bucket
-    KinesisFirehoseDeliveryS3Bucket:
+    # Kinesis Firehose delivery stream S3 bucket
+    FirehoseDeliveryStreamS3Bucket:
         Type: AWS::S3::Bucket
         DeletionPolicy: Delete
         Properties:
-            BucketName: !Sub ${AWS::StackName}-${KinesisFirehoseDeliveryS3BucketName}
-    # IAM Role
-    KinesisFirehoseDeliveryIamPolicy:
+            BucketName: !Ref FirehoseDeliveryStreamS3BucketName
+    # Kinesis Firehose IAM Role
+    FirehoseDeliveryStreamIamPolicy:
         Type: AWS::IAM::ManagedPolicy
         Properties:
-            ManagedPolicyName: KinesisFirehoseDeliveryIamPolicy
-            Description: Grants access to KinesisFirehose to upload data to S3
+            ManagedPolicyName: FirehoseDeliveryStreamIamPolicy
+            Description: Grants access to Kinesis Firehose delivery stream to upload data to S3
             Path: /
             PolicyDocument:
                 Version: 2012-10-17
@@ -203,17 +203,17 @@ Resources:
                           - s3:ListBucketMultipartUploads
                           - s3:AbortMultipartUpload
                       Resource:
-                          - !Sub arn:aws:s3:::${KinesisFirehoseDeliveryS3Bucket}/*
+                          - !Sub arn:aws:s3:::${FirehoseDeliveryStreamS3Bucket}/*
                     # CloudWatch
                     - Effect: Allow
                       Action:
-                          - logs:PutLogEvents
+                          - logs:*
                       Resource:
-                          - !Sub arn:aws:logs:*:*:*
-    KinesisFirehoseDeliveryIamRole:
+                          - arn:aws:logs:*:*:*
+    FirehoseDeliveryStreamIamRole:
         Type: AWS::IAM::Role
         Properties:
-            RoleName: KinesisFirehoseDeliveryIamRole
+            RoleName: FirehoseDeliveryStreamIamRole
             Path: /
             AssumeRolePolicyDocument:
                 Version: 2012-10-17
@@ -225,7 +225,7 @@ Resources:
                           Service:
                               - firehose.amazonaws.com
             ManagedPolicyArns:
-                - !Ref KinesisFirehoseDeliveryIamPolicy
+                - !Ref FirehoseDeliveryStreamIamPolicy
     # Kinesis Firehose delivery streams
     ProductDeliveryStream:
         Type: AWS::KinesisFirehose::DeliveryStream
@@ -233,17 +233,17 @@ Resources:
             DeliveryStreamName: ProductDeliveryStream
             DeliveryStreamType: DirectPut
             S3DestinationConfiguration:
-                BucketARN: !GetAtt KinesisFirehoseDeliveryS3Bucket.Arn
+                BucketARN: !GetAtt FirehoseDeliveryStreamS3Bucket.Arn
                 BufferingHints:
-                    SizeInMBs: !Ref KinesisFirehoseBufferSizeMb
-                    IntervalInSeconds: !Ref KinesisFirehoseBufferIntervalSec
+                    SizeInMBs: !Ref FirehoseBufferSizeMb
+                    IntervalInSeconds: !Ref FirehoseBufferIntervalSec
                 CompressionFormat: UNCOMPRESSED
                 Prefix: product/
                 ErrorOutputPrefix: product-error/
-                RoleARN: !GetAtt KinesisFirehoseDeliveryIamRole.Arn
+                RoleARN: !GetAtt FirehoseDeliveryStreamIamRole.Arn
                 CloudWatchLoggingOptions:
                     Enabled: true
-                    LogGroupName: KinesisFirehoseDeliveryGroup
+                    LogGroupName: FirehoseDeliveryGroup
                     LogStreamName: ProductDeliveryStream
     InfringementDeliveryStream:
         Type: AWS::KinesisFirehose::DeliveryStream
@@ -251,18 +251,24 @@ Resources:
             DeliveryStreamName: InfringementDeliveryStream
             DeliveryStreamType: DirectPut
             S3DestinationConfiguration:
-                BucketARN: !GetAtt KinesisFirehoseDeliveryS3Bucket.Arn
+                BucketARN: !GetAtt FirehoseDeliveryStreamS3Bucket.Arn
                 BufferingHints:
-                    SizeInMBs: !Ref KinesisFirehoseBufferSizeMb
-                    IntervalInSeconds: !Ref KinesisFirehoseBufferIntervalSec
+                    SizeInMBs: !Ref FirehoseBufferSizeMb
+                    IntervalInSeconds: !Ref FirehoseBufferIntervalSec
                 CompressionFormat: UNCOMPRESSED
                 Prefix: infringement/
                 ErrorOutputPrefix: infringement-error/
-                RoleARN: !GetAtt KinesisFirehoseDeliveryIamRole.Arn
+                RoleARN: !GetAtt FirehoseDeliveryStreamIamRole.Arn
                 CloudWatchLoggingOptions:
                     Enabled: true
-                    LogGroupName: KinesisFirehoseDeliveryGroup
+                    LogGroupName: FirehoseDeliveryGroup
                     LogStreamName: InfringementDeliveryStream
+    # Lambda package S3 bucket
+    LambdaPackageS3Bucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Delete
+        Properties:
+            BucketName: !Ref LambdaPackageS3BucketName
 Outputs:
     # VPC
     VpcId:
@@ -285,13 +291,6 @@ Outputs:
     PublicSubnet2AvailabilityZone:
         Description: Public Subnet 2 AvailabilityZone
         Value: !GetAtt PublicSubnet2.AvailabilityZone
-    InternetGatewayId:
-        Description: InternetGateway ID
-        Value: !Ref InternetGateway
-    # Public SecurityGroup
-    PublicSecurityGroupId:
-        Description: Public SecurityGroup ID
-        Value: !Ref PublicSecurityGroup
     # Public PostgreSQL RDS
     PublicDbInstanceName:
         Description: Public DB instance name
@@ -302,11 +301,18 @@ Outputs:
     PublicDbInstanceEndpointPort:
         Description: Public DB instance name endpoint port
         Value: !GetAtt PublicDbInstance.Endpoint.Port
-    # S3
-    KinesisFirehoseDeliveryS3BucketName:
-        Description: Kinesis Firehose delivery S3 bucket name
-        Value: !Ref KinesisFirehoseDeliveryS3Bucket
-    # KinesisFirehose
+    # Kinesis Firehose delivery stream S3 bucket
+    FirehoseDeliveryStreamS3BucketName:
+        Description: Kinesis Firehose delivery stream S3 bucket name
+        Value: !Ref FirehoseDeliveryStreamS3Bucket
+    # Kinesis Firehose delivery streams
     ProductDeliveryStreamName:
         Description: Product delivery stream name
         Value: !Ref ProductDeliveryStream
+    InfringementDeliveryStreamName:
+        Description: Infringement delivery stream name
+        Value: !Ref InfringementDeliveryStream
+    # Lambda package S3 bucket
+    LambdaPackageS3BucketName:
+        Description: Lambda package S3 bucket name
+        Value: !Ref LambdaPackageS3Bucket

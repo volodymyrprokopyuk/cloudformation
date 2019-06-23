@@ -1,0 +1,143 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+    Update Kinesis Firehose delivery S3 bucket with Lambda configuration to resovel
+    circular dependency
+Parameters:
+    # RDS
+    DbHost:
+        Description: Database host (RDS Endpoint.Address)
+        Type: String
+    DbPort:
+        Description: Database port
+        Type: String
+    DbName:
+        Description: Database name
+        Type: String
+    DbUser:
+        Description: Database master user
+        Type: String
+    DbPassword:
+        Description: Database master user password
+        Type: String
+    # S3
+    FirehoseDeliveryStreamS3BucketName:
+        Description: Kinesis Firehose delivery stream S3 bucket name
+        Type: String
+    LambdaPackageS3BucketName:
+        Description: Lambda package S3 bucket name
+        Type: String
+    # Lambda
+    LambdaPythonRuntime:
+        Description: Lambda Python runtime
+        Type: String
+        Default: python3.7
+    LambdaTimeoutSec:
+        Description: Lambda timeout
+        Type: String
+        Default: 300
+    PutProductInDbLambdaVersion:
+        Description: PutProductInDb lambda version
+        Type: String
+    PutInfringementInDbLambdaVersion:
+        Description: PutInfringementInDb lambda version
+        Type: String
+Resources:
+    # Lambda IAM Role
+    PutDataInDbLambdaIamPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            ManagedPolicyName: PutDataInDbLambdaIamPolicy
+            Description: Grants access to Lambda to get data from S3 and put data into RDS
+            Path: /
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    # S3
+                    - Effect: Allow
+                      Action:
+                          - s3:GetBucketLocation
+                          - s3:ListBucket
+                          - s3:GetObject
+                          - s3:ListBucketMultipartUploads
+                      Resource:
+                          - !Sub arn:aws:s3:::${FirehoseDeliveryStreamS3BucketName}/*
+                    # RDS
+                    - Effect: Allow
+                      Action:
+                          - rds:*
+                      Resource:
+                          - !Sub arn:aws:rds:*:*:*
+                    # CloudWatch
+                    - Effect: Allow
+                      Action:
+                          - logs:*
+                      Resource:
+                          - !Sub arn:aws:logs:*:*:*
+    PutDataInDbLambdaIamRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: PutDataInDbLambdaIamRole
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+            ManagedPolicyArns:
+                - !Ref PutDataInDbLambdaIamPolicy
+    # Product lambda
+    PutProductInDbLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: PutProductInDbLambda
+            Description: Put products into database
+            Runtime: !Ref LambdaPythonRuntime
+            Timeout: !Ref LambdaTimeoutSec
+            Environment:
+                Variables:
+                    DB_HOST: !Ref DbHost
+                    DB_PORT: !Ref DbPort
+                    DB_NAME: !Ref DbName
+                    DB_USER: !Ref DbUser
+                    DB_PASSWORD: !Ref DbPassword
+            Code:
+                S3Bucket: !Ref LambdaPackageS3BucketName
+                S3Key: !Sub PutProductInDbLambda-${PutProductInDbLambdaVersion}.zip
+            Handler: lambda_function.lambda_handler
+            Role: !GetAtt PutDataInDbLambdaIamRole.Arn
+    InvokePutProductInDbLambdaPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            Action: lambda:InvokeFunction
+            FunctionName: !GetAtt PutProductInDbLambda.Arn
+            Principal: s3.amazonaws.com
+            SourceArn: !Sub arn:aws:s3:::${FirehoseDeliveryStreamS3BucketName}
+    # Kinesis Firehose S3 bucket
+    # FirehoseDeliveryStreamS3Bucket:
+    #     Type: AWS::S3::Bucket
+    #     DeletionPolicy: Delete
+    #     Properties:
+    #         BucketName: !Sub arn:aws:s3:::${FirehoseDeliveryStreamS3BucketName}
+    #         NotificationConfiguration:
+    #             LambdaConfigurations:
+    #                 # Product lambda
+    #                 - Event: s3:ObjectCreated:*
+    #                   Filter:
+    #                       S3Key:
+    #                           Rules:
+    #                               - Name: prefix
+    #                                 Value: product/
+    #                   Function: !GetAtt PutProductInDbLambda.Arn
+
+
+        # "LambdaFunctionArn": {"Fn::Join": [":", [
+        #     "arn:aws:lambda",
+        #     { "Ref": "AWS::Region" },
+        #     { "Ref": "AWS::AccountId" },
+        #     "function:PutProductInDbLambda"
+        # ]]}
