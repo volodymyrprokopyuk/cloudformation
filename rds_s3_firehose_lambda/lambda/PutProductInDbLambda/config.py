@@ -1,27 +1,19 @@
 """Configuration module"""
 import os
-import json
 
 
 # Uninitialized Singleton configuration for the whole process
 _GLOBAL_CONFIG = None
 
 
-def _get_env_idependent_config():
-    config = {}
-    with open("env_independent_config.json") as config_file:
-        config = json.loads(config_file.read())
-    return config
-
-
 def _get_env_specific_config():
     config = {}
-    config["ENV_SPECIFIC_CONFIG_OPTION_A"] = os.getenv(
-        "ENV_SPECIFIC_CONFIG_OPTION_A", "Configuration option A default"
-    )
-    config["ENV_SPECIFIC_CONFIG_OPTION_B"] = os.getenv(
-        "ENV_SPECIFIC_CONFIG_OPTION_B", "Configuration option A default"
-    )
+    # Geg RDS endpoint and credentials from environment variables
+    config["db_host"] = os.getenv("DB_HOST")
+    config["db_port"] = os.getenv("DB_PORT")
+    config["db_name"] = os.getenv("DB_NAME")
+    config["db_user"] = os.getenv("DB_USER")
+    config["db_password"] = os.getenv("DB_PASSWORD")
     return config
 
 
@@ -37,10 +29,6 @@ def get_config():
         return _GLOBAL_CONFIG
     # Initialize the Singleton configuraiton
     _GLOBAL_CONFIG = {}
-    # Retrieve the environment independent configuration (in this case a configuration
-    # JSON file)
-    env_indpendent_config = _get_env_idependent_config()
-    _GLOBAL_CONFIG.update(env_indpendent_config)
     # Retrieve the environment specific configuration (in this case environment
     # variables)
     env_specific_config = _get_env_specific_config()
