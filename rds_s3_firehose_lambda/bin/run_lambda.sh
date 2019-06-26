@@ -10,6 +10,7 @@ export DB_NAME
 export DB_USER
 export DB_PASSWORD
 
-LAMBDA_FUNCTION=$(pwd)/lambda/PutProductInDbLambda/lambda_function.py
+LAMBDA_ROOT=$(pwd)/lambda/function
+LAMBDA_FUNCTION=$LAMBDA_ROOT/PutProductInDbLambda/lambda_function.py
 
 python $LAMBDA_FUNCTION

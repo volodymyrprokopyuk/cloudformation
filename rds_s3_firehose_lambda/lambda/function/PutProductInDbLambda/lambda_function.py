@@ -4,6 +4,7 @@ import re
 import json
 import boto3
 import psycopg2
+from psycopg2.extras import RealDictCursor
 from config import get_config
 
 
@@ -49,6 +50,9 @@ def _validate_request(request):
 
 def _download_s3_object(s3, s3_object):
     data_file = re.sub(r".+/", "", s3_object["s3_object_key"])
+    # Download data file to the /tmp directory
+    # as in AWS Lambda environment only the /tmp directlry is wirtable
+    data_file = f"/tmp/{data_file}"
     s3.download_file(s3_object["s3_bucket_name"], s3_object["s3_object_key"], data_file)
     return data_file
 
@@ -85,9 +89,20 @@ def _validate_record(record):
 
 def _put_record_in_db(rds, record):
     with rds.cursor() as cursor:
-        cursor.execute("SELECT 1234;")
-        row = cursor.fetchone()
-        print(row)
+        sql = """
+        SELECT put_product(
+            %(product_external_id)s,
+            %(product_title)s,
+            %(first_protection_ts)s,
+            %(registration_ts)s,
+            %(protection_status)s,
+            %(product_image_url)s
+        ) product_id;
+        """
+        cursor.execute(sql, record)
+        result = cursor.fetchone()
+        rds.commit()
+        return result
 
 
 def _process_request(request):
@@ -105,12 +120,14 @@ def _process_request(request):
                         errors = _validate_record(record)
                         if not errors:
                             try:
-                                record_id = _put_record_in_db(rds, record)
-                                print(record_id)
+                                print(record)
+                                result = _put_record_in_db(rds, record)
+                                print(result)
                             except Exception as error:
                                 print(
                                     f"ERROR: put record in database {record}: {error}"
                                 )
+                                rds.rollback()
                         else:
                             print(f"ERROR: validate record {record}: {errors}")
                     except Exception as error:
@@ -135,13 +152,15 @@ def lambda_handler(event, context):
                 s3 = boto3.client("s3")
                 local_config["s3"] = s3
                 try:
-                    rds = psycopg2.connect(
-                        host=local_config["db_host"],
-                        port=local_config["db_port"],
-                        dbname=local_config["db_name"],
-                        user=local_config["db_user"],
-                        password=local_config["db_password"],
-                    )
+                    rds_config = {
+                        "host": local_config["db_host"],
+                        "port": local_config["db_port"],
+                        "dbname": local_config["db_name"],
+                        "user": local_config["db_user"],
+                        "password": local_config["db_password"],
+                        "cursor_factory": RealDictCursor,
+                    }
+                    rds = psycopg2.connect(**rds_config)
                     local_config["rds"] = rds
                     try:
                         _process_request(request)

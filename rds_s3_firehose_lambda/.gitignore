@@ -1,1 +1,2 @@
-lambda/*/*.zip
+lambda/lib/psycopg2/
+lambda/function/*/*.zip
