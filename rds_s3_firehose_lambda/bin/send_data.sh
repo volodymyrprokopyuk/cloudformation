@@ -2,7 +2,8 @@
 
 set -eux
 
-ROOT_DIR=$(pwd)/client
+readonly ROOT_DIR=$(pwd)/client
+readonly CLIENT_SCRIPT=$ROOT_DIR/main.py
 
-python $ROOT_DIR/main.py -p $ROOT_DIR/product.txt
-python $ROOT_DIR/main.py -i $ROOT_DIR/infringement.txt
+python $CLIENT_SCRIPT -p $ROOT_DIR/product.txt
+python $CLIENT_SCRIPT -i $ROOT_DIR/infringement.txt
