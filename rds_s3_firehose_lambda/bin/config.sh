@@ -7,8 +7,8 @@ readonly DB_NAME=infringement
 readonly DB_USER=vld
 readonly DB_PASSWORD='Password1!'
 # Update DB_HOST=RDS Endpoint.Address after successful ./bin/deploy_stack.sh
-DB_HOST=vp1pyok8bqdsh8w.c07z8n4r5v4a.eu-central-1.rds.amazonaws.com
-# DB_HOST=localhost
+# DB_HOST=vp1pyok8bqdsh8w.c07z8n4r5v4a.eu-central-1.rds.amazonaws.com
+DB_HOST=localhost
 
 readonly S3_FIREHOSE_DELIVERY_STREAM_BUCKET_NAME=${CF_STACK_NAME}-firehose-delivery-stream
 # Create lambda package S3 bucket manually outside of the CF_STACK_NAME

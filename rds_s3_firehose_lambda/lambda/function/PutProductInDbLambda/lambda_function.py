@@ -48,7 +48,7 @@ def _validate_request(request):
     return errors
 
 
-def _download_s3_object(s3, s3_object):
+def _download_s3_object(s3_object, s3):
     data_file = re.sub(r".+/", "", s3_object["s3_object_key"])
     # Download data file to the /tmp directory
     # as in AWS Lambda environment only the /tmp directlry is wirtable
@@ -58,8 +58,8 @@ def _download_s3_object(s3, s3_object):
 
 
 def _parse_data_file(data_file):
-    with open(data_file, "r") as opened_data_file:
-        raw_data = opened_data_file.read()
+    with open(data_file, "r") as opened_file:
+        raw_data = opened_file.read()
         raw_records = raw_data.strip().split("\n")
         return raw_records
 
@@ -105,39 +105,42 @@ def _put_record_in_db(rds, record):
         return result
 
 
-def _process_request(request):
-    local_config = get_config()
-    s3 = local_config["s3"]
-    rds = local_config["rds"]
-    for s3_object in request["s3_objects"]:
-        try:
-            data_file = _download_s3_object(s3, s3_object)
+def _process_record(raw_record, rds):
+    try:
+        record = _prepare_record(raw_record)
+        errors = _validate_record(record)
+        if not errors:
             try:
-                raw_records = _parse_data_file(data_file)
-                for raw_record in raw_records:
-                    try:
-                        record = _prepare_record(raw_record)
-                        errors = _validate_record(record)
-                        if not errors:
-                            try:
-                                print(record)
-                                result = _put_record_in_db(rds, record)
-                                print(result)
-                            except Exception as error:
-                                print(
-                                    f"ERROR: put record in database {record}: {error}"
-                                )
-                                rds.rollback()
-                        else:
-                            print(f"ERROR: validate record {record}: {errors}")
-                    except Exception as error:
-                        print(f"ERROR: prepare record {raw_record}: {error}")
+                print(record)
+                result = _put_record_in_db(rds, record)
+                print(result)
             except Exception as error:
-                print(f"ERROR: parse data file {data_file}: {error}")
-            finally:
-                os.remove(data_file)
+                print(f"ERROR: put record in database {record}: {error}")
+                rds.rollback()
+        else:
+            print(f"ERROR: validate record {record}: {errors}")
+    except Exception as error:
+        print(f"ERROR: prepare record {raw_record}: {error}")
+
+
+def _process_s3_object(s3_object, s3, rds):
+    try:
+        data_file = _download_s3_object(s3_object, s3)
+        try:
+            raw_records = _parse_data_file(data_file)
+            for raw_record in raw_records:
+                _process_record(raw_record, rds)
         except Exception as error:
-            print(f"ERROR: downlaod S3 object {s3_object}: {error}")
+            print(f"ERROR: parse data file {data_file}: {error}")
+        finally:
+            os.remove(data_file)
+    except Exception as error:
+        print(f"ERROR: downlaod S3 object {s3_object}: {error}")
+
+
+def _process_request(request, s3, rds):
+    for s3_object in request["s3_objects"]:
+        _process_s3_object(s3_object, s3, rds)
 
 
 def lambda_handler(event, context):
@@ -163,7 +166,7 @@ def lambda_handler(event, context):
                     rds = psycopg2.connect(**rds_config)
                     local_config["rds"] = rds
                     try:
-                        _process_request(request)
+                        _process_request(request, s3, rds)
                     finally:
                         rds.close()
                 except Exception as error:
@@ -183,7 +186,8 @@ if __name__ == "__main__":
                 "s3": {
                     "bucket": {"name": "vlad-stack-firehose-delivery-stream"},
                     "object": {
-                        "key": "product/2019/06/23/18/ProductDeliveryStream-1-2019-06-23-18-09-28-6b84569e-91e6-4ef7-81d9-fce3ac6384b7"
+                        "key": "product/2019/06/23/18/ProductDeliveryStream"
+                        + "-1-2019-06-23-18-09-28-6b84569e-91e6-4ef7-81d9-fce3ac6384b7"
                     },
                 }
             },
@@ -191,7 +195,8 @@ if __name__ == "__main__":
                 "s3": {
                     "bucket": {"name": "vlad-stack-firehose-delivery-stream"},
                     "object": {
-                        "key": "product/2019/06/24/09/ProductDeliveryStream-1-2019-06-24-09-18-32-beef7cae-dc75-4d56-a17f-2b075c8c5592"
+                        "key": "product/2019/06/24/09/ProductDeliveryStream"
+                        + "-1-2019-06-24-09-18-32-beef7cae-dc75-4d56-a17f-2b075c8c5592"
                     },
                 }
             },

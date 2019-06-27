@@ -206,19 +206,19 @@ LANGUAGE sql AS $$
     RETURNING infringement_id;
 $$;
 
--- -- pirate_source
--- SELECT put_pirate_source(
---     'PSRC001', 'GOOGLE', 'SEARCH_ENGINE', '2018-01-20 18:54:35+0200'
--- ) pirate_source_id;
--- SELECT put_pirate_source(
---     'PSRC002', 'FACEBOOK', 'SOCIAL_MEDIA', '2018-02-22 14:13:59+0200'
--- ) pirate_source_id;
--- SELECT put_pirate_source(
---     'PSRC003', 'TWITTER', 'SOCIAL_MEDIA', '2018-03-25 08:50:55+0200'
--- ) pirate_source_id;
--- SELECT put_pirate_source(
---     'PSRC003', 'TWITTER', 'SOCIAL_MEDIA', '2018-03-25 08:50:55+0200'
--- ) pirate_source_id;
+-- pirate_source
+SELECT put_pirate_source(
+    'PSRC001', 'GOOGLE', 'SEARCH_ENGINE', '2018-01-20 18:54:35+0200'
+) pirate_source_id;
+SELECT put_pirate_source(
+    'PSRC002', 'FACEBOOK', 'SOCIAL_MEDIA', '2018-02-22 14:13:59+0200'
+) pirate_source_id;
+SELECT put_pirate_source(
+    'PSRC003', 'TWITTER', 'SOCIAL_MEDIA', '2018-03-25 08:50:55+0200'
+) pirate_source_id;
+SELECT put_pirate_source(
+    'PSRC003', 'TWITTER', 'SOCIAL_MEDIA', '2018-03-25 08:50:55+0200'
+) pirate_source_id;
 
 -- -- product
 -- SELECT put_product(
