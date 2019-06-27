@@ -32,8 +32,8 @@ function create_and_upload_lambda_archive_to_s3 {
     # Create lambda archive
     # Add Python dependencies and exclude the psycopg2 with dynamically linked libpg
     cd $deps_dir
-    zip -9 -q -r $lambda_archive . -x '*psycopg2/*'
-    # Add the psycopg2 with statically linked libpg
+    zip -9 -q -r $lambda_archive . -x '*psycopg2/*' -x '*__pycache__/*'
+    # Add common shared Python code and the psycopg2 with statically linked libpg
     # as AWS Lambda environment does not have libpg
     cd $LIB_DIR
     zip -9 -q -r $lambda_archive .

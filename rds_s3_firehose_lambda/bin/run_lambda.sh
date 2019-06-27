@@ -18,5 +18,5 @@ export PYTHONPATH=$LAMBDA_LIB_DIR
 readonly LAMBDA_PUT_PRODUCT_IN_DB=$LAMBDA_FUNCTION_DIR/PutProductInDbLambda/lambda_function.py
 readonly LAMBDA_PUT_INFRINGEMENT_IN_DB=$LAMBDA_FUNCTION_DIR/PutInfringementInDbLambda/lambda_function.py
 
-# python $LAMBDA_PUT_PRODUCT_IN_DB
+python $LAMBDA_PUT_PRODUCT_IN_DB
 python $LAMBDA_PUT_INFRINGEMENT_IN_DB

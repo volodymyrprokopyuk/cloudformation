@@ -51,17 +51,8 @@ if __name__ == "__main__":
                 "s3": {
                     "bucket": {"name": "vlad-stack-firehose-delivery-stream"},
                     "object": {
-                        "key": "product/2019/06/23/18/ProductDeliveryStream"
-                        + "-1-2019-06-23-18-09-28-6b84569e-91e6-4ef7-81d9-fce3ac6384b7"
-                    },
-                }
-            },
-            {
-                "s3": {
-                    "bucket": {"name": "vlad-stack-firehose-delivery-stream"},
-                    "object": {
-                        "key": "product/2019/06/24/09/ProductDeliveryStream"
-                        + "-1-2019-06-24-09-18-32-beef7cae-dc75-4d56-a17f-2b075c8c5592"
+                        "key": "product/2019/06/27/12/ProductDeliveryStream"
+                        + "-1-2019-06-27-12-51-31-6622a92c-0c3c-47d1-8bb1-684a0742d6b1"
                     },
                 }
             },
