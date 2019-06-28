@@ -6,6 +6,10 @@ from functools import partial
 import boto3
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from common.logger import with_logger, log_environment, log_document_context
+
+
+LOGGER_NAME = "main"
 
 
 def _validate_config(local_config):
@@ -69,25 +73,28 @@ def _prepare_record(raw_record):
     return record
 
 
-def _process_record(validate_record, put_record_in_db, raw_record, rds):
+@with_logger(LOGGER_NAME)
+def _process_record(logger, validate_record, put_record_in_db, raw_record, rds):
     try:
         record = _prepare_record(raw_record)
         errors = validate_record(record)
         if not errors:
             try:
-                print(record)
+                logger.info(record)
                 result = put_record_in_db(rds, record)
-                print(result)
+                logger.info(result)
             except Exception as error:
-                print(f"ERROR: put record in database {record}: {error}")
+                logger.error(f"Put record in database {record}: {error}")
                 rds.rollback()
         else:
-            print(f"ERROR: validate record {record}: {errors}")
+            logger.error(f"Validate record {record}: {errors}")
     except Exception as error:
-        print(f"ERROR: prepare record {raw_record}: {error}")
+        logger.error(f"Prepare record {raw_record}: {error}")
 
 
-def _process_document(process_record, document, s3, rds):
+@with_logger(LOGGER_NAME)
+@log_document_context
+def _process_document(logger, process_record, document, s3, rds):
     try:
         data_file = _download_document(document, s3)
         try:
@@ -95,11 +102,11 @@ def _process_document(process_record, document, s3, rds):
             for raw_record in raw_records:
                 process_record(raw_record, rds)
         except Exception as error:
-            print(f"ERROR: parse data file {data_file}: {error}")
+            logger.error(f"Parse document {data_file}: {error}")
         finally:
             os.remove(data_file)
     except Exception as error:
-        print(f"ERROR: downlaod document {document}: {error}")
+        logger.error(f"Downlaod document {document}: {error}")
 
 
 def _process_request(process_document, request, s3, rds):
@@ -107,7 +114,9 @@ def _process_request(process_document, request, s3, rds):
         process_document(document, s3, rds)
 
 
-def _lambda_handler(process_request, local_config, event, context):
+@with_logger(LOGGER_NAME)
+@log_environment
+def _lambda_handler(logger, process_request, local_config, event, context):
     errors = _validate_config(local_config)
     if not errors:
         request = _prepare_request(event)
@@ -132,13 +141,13 @@ def _lambda_handler(process_request, local_config, event, context):
                     finally:
                         rds.close()
                 except Exception as error:
-                    print(f"ERROR: connect to RDS: {error}")
+                    logger.critical(f"Connect to RDS: {error}")
             except Exception as error:
-                print(f"ERROR: create S3 client: {error}")
+                logger.critical(f"Create S3 client: {error}")
         else:
-            print(f"ERROR: validate request {request}: {errors}")
+            logger.error(f"Validate request {request}: {errors}")
     else:
-        print(f"ERROR: validate configuration {local_config}: {errors}")
+        logger.critical(f"Validate configuration {local_config}: {errors}")
 
 
 def create_lambda_handler(validate_record, put_record_in_db, local_config):

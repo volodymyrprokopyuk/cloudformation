@@ -21,4 +21,5 @@ aws cloudformation $CF_STACK_ACTION --stack-name $CF_STACK_NAME \
     ParameterKey=LambdaPackageS3BucketName,ParameterValue=$S3_LAMBDA_PACKAGE_BUCKET_NAME \
     ParameterKey=PutProductInDbLambdaVersion,ParameterValue=$LAMBDA_PUT_PRODUCT_IN_DB_VERSION \
     ParameterKey=PutInfringementInDbLambdaVersion,ParameterValue=$LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION \
+    ParameterKey=LambdaLogLevel,ParameterValue=$LAMBDA_LOG_LEVEL \
     --capabilities CAPABILITY_NAMED_IAM

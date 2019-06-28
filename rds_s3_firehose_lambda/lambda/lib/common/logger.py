@@ -9,7 +9,7 @@ from functools import wraps
 class JsonFormatter:
     """Convert a LogRecord to JSON"""
 
-    OPTIONAL_JSON_ATTRIBUTES = ["stack", "version"]
+    OPTIONAL_JSON_ATTRIBUTES = ["stack", "version", "document"]
 
     def format(self, log_record):
         """Convert a LogRecord to JSON"""
@@ -95,19 +95,19 @@ def log_environment(original):
     return decorated
 
 
-def log_context(original):
+def log_document_context(original):
     """Add context-specific parameters to a LogRecord"""
 
     @wraps(original)
-    def decorated(logger, request, *args, **kwargs):
-        candidate_id = request["candidate_id"]
+    def decorated(logger, f1, request, *args, **kwargs):
+        document = request["s3_object_key"]
 
         def execution_context_filter(log_record):
-            log_record.candidateId = candidate_id
+            log_record.document = document
             return True
 
         logger.addFilter(execution_context_filter)
-        result = original(logger, request, *args, **kwargs)
+        result = original(logger, f1, request, *args, **kwargs)
         logger.removeFilter(execution_context_filter)
         return result
 
@@ -141,4 +141,5 @@ def main(logger):
 if __name__ == "__main__":
     main()
 
-# LOG_LEVEL=DEBUG STACK_NAME=vlad-dev LAMBDA_VERSION=0.1.0 python lambda/lib/common/logger.py
+# LOG_LEVEL=DEBUG STACK_NAME=vlad-dev LAMBDA_VERSION=0.1.0 \
+#     python lambda/lib/common/logger.py

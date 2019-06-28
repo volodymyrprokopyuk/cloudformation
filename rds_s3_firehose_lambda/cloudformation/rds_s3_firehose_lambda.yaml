@@ -52,6 +52,10 @@ Parameters:
         Type: String
         Default: 60
     # Lambda
+    LambdaLogLevel:
+        Description: Lambda log level
+        Type: String
+        Default: DEBUG
     LambdaPythonRuntime:
         Description: Lambda Python runtime
         Type: String
@@ -347,6 +351,9 @@ Resources:
             Timeout: !Ref LambdaTimeoutSec
             Environment:
                 Variables:
+                    STACK_NAME: !Sub ${AWS::StackName}
+                    LAMBDA_VERSION: !Ref PutProductInDbLambdaVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
                     DB_HOST: !GetAtt PublicDbInstance.Endpoint.Address
                     DB_PORT: !GetAtt PublicDbInstance.Endpoint.Port
                     DB_NAME: !Ref DbName
@@ -374,6 +381,9 @@ Resources:
             Timeout: !Ref LambdaTimeoutSec
             Environment:
                 Variables:
+                    STACK_NAME: !Sub ${AWS::StackName}
+                    LAMBDA_VERSION: !Ref PutInfringementInDbLambdaVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
                     DB_HOST: !GetAtt PublicDbInstance.Endpoint.Address
                     DB_PORT: !GetAtt PublicDbInstance.Endpoint.Port
                     DB_NAME: !Ref DbName
