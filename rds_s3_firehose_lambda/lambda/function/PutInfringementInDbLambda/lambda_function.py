@@ -51,7 +51,7 @@ if __name__ == "__main__":
                         + "-1-2019-06-27-12-51-31-35c3ce6b-f80c-42f0-8159-1811ccd161a4"
                     },
                 }
-            },
+            }
         ]
     }
     lambda_handler(test_event, None)
