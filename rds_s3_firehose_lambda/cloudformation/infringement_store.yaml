@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-    Create a VPC with two Subnets in different AZs and a PostgreSQL RDS
+    Create a VPC with two Subnets in different AvailabilityZoness and a PostgreSQL RDS
 Parameters:
     # VPC
     VpcCidrBlock:
@@ -35,7 +35,8 @@ Parameters:
         Default: 11.2
     DbPort:
         Description: Database port
-        Type: String
+        Type: Number
+        Default: 5432
     DbName:
         Description: Database name
         Type: String
@@ -196,9 +197,11 @@ Outputs:
         Description: Subnet 2 AvailabilityZone
         Value: !GetAtt Subnet2.AvailabilityZone
     # PostgreSQL RDS
-    DbInstanceName:
-        Description: DB instance name
-        Value: !Ref DbInstance
+    DbInstanceArn:
+        Description: DB instance ARN
+        Value: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${DbInstance}
+        Export:
+            Name: RdsDbInstanceArn
     DbInstanceEndpointAddress:
         Description: DB instance name endpoint address
         Value: !GetAtt DbInstance.Endpoint.Address

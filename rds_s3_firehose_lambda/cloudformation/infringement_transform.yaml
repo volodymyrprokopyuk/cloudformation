@@ -22,14 +22,14 @@ Parameters:
     LambdaLogLevel:
         Description: Lambda log level
         Type: String
-        Default: DEBUG
+        Default: INFO
     LambdaPythonRuntime:
         Description: Lambda Python runtime
         Type: String
         Default: python3.7
     LambdaTimeoutSec:
         Description: Lambda timeout
-        Type: String
+        Type: Number
         Default: 300
     PutProductInDbLambdaVersion:
         Description: PutProductInDb lambda version
@@ -64,7 +64,7 @@ Resources:
                       Action:
                           - rds:*
                       Resource:
-                          - arn:aws:rds:*:*:*
+                          - !ImportValue RdsDbInstanceArn
                     # CloudWatch
                     - Effect: Allow
                       Action:
@@ -97,7 +97,7 @@ Resources:
             Timeout: !Ref LambdaTimeoutSec
             Environment:
                 Variables:
-                    STACK_NAME: !Sub ${AWS::StackName}
+                    STACK_NAME: !Ref AWS::StackName
                     LAMBDA_VERSION: !Ref PutProductInDbLambdaVersion
                     LOG_LEVEL: !Ref LambdaLogLevel
                     DB_HOST: !ImportValue RdsEndpointAddress
@@ -127,7 +127,7 @@ Resources:
             Timeout: !Ref LambdaTimeoutSec
             Environment:
                 Variables:
-                    STACK_NAME: !Sub ${AWS::StackName}
+                    STACK_NAME: !Ref AWS::StackName
                     LAMBDA_VERSION: !Ref PutInfringementInDbLambdaVersion
                     LOG_LEVEL: !Ref LambdaLogLevel
                     DB_HOST: !ImportValue RdsEndpointAddress
@@ -148,7 +148,7 @@ Resources:
             Principal: s3.amazonaws.com
             SourceArn: !ImportValue FirehoseDeliveryStreamS3BucketArn
 Outputs:
-    # Lambda
+    # Product Lambda
     PutProductInDbLambdaName:
         Description: PutProductInDb lambda name
         Value: !Ref PutProductInDbLambda
@@ -157,6 +157,7 @@ Outputs:
         Value: !GetAtt PutProductInDbLambda.Arn
         Export:
             Name: PutProductInDbLambdaArn
+    # Infringement Lambda
     PutInfringementInDbLambdaName:
         Description: PutInfringementInDb lambda name
         Value: !Ref PutInfringementInDbLambda

@@ -10,11 +10,11 @@ Parameters:
     # Kinesis Firehose
     FirehoseBufferSizeMb:
         Description: Kinesis Firehose buffer size in MB
-        Type: String
+        Type: Number
         Default: 1
     FirehoseBufferIntervalSec:
         Description: Kinesis Firehose buffer interval in sec
-        Type: String
+        Type: Number
         Default: 60
 Resources:
     # Kinesis Firehose delivery stream S3 bucket
@@ -39,7 +39,7 @@ Resources:
         Type: AWS::IAM::ManagedPolicy
         Properties:
             ManagedPolicyName: FirehoseDeliveryStreamIamPolicy
-            Description: Grants access to Kinesis Firehose delivery stream to upload data to S3
+            Description: Grants access to Kinesis Firehose delivery stream to put data to S3
             Path: /
             PolicyDocument:
                 Version: 2012-10-17
