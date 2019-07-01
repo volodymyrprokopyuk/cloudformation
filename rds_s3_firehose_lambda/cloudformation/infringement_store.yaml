@@ -1,0 +1,211 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+    Create a VPC with two Subnets in different AZs and a PostgreSQL RDS
+Parameters:
+    # VPC
+    VpcCidrBlock:
+        Description: VPC CIDR block
+        Type: String
+        Default: 10.1.0.0/16
+    SubnetCidrBlock:
+        Description: Subnet CIDR block
+        Type: String
+        Default: 10.1.10.0/24
+    Subnet2CidrBlock:
+        Description: Subnet 2 CIDR block
+        Type: String
+        Default: 10.1.20.0/24
+    # RDS
+    DbInstanceClass:
+        Description: Database instance class
+        Type: String
+        Default: db.t2.micro
+    DbMaxAllocatedStorage:
+        Description: Database maximal allocated storage
+        Type: String
+        Default: 5
+    DbEngine:
+        Description: Database engine
+        Type: String
+        Default: postgres
+    DbEngineVersion:
+        Description: Database engine version
+        Type: String
+        Default: 11.2
+    DbPort:
+        Description: Database port
+        Type: String
+    DbName:
+        Description: Database name
+        Type: String
+    DbUser:
+        Description: Database master user
+        Type: String
+    DbPassword:
+        Description: Database master user password
+        Type: String
+        NoEcho: true
+Resources:
+    # VPC
+    Vpc:
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: !Ref VpcCidrBlock
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-Vpc
+    # InternetGateway
+    InternetGateway:
+        Type: AWS::EC2::InternetGateway
+    GatewayAttachment:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            VpcId: !Ref Vpc
+            InternetGatewayId: !Ref InternetGateway
+    # Subnet
+    Subnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: !Ref SubnetCidrBlock
+            AvailabilityZone: !Select [0, !GetAZs ]
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-Subnet
+    # RouteTable
+    RouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-RouteTable
+    Route1:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref RouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+    SubnetRouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref RouteTable
+            SubnetId: !Ref Subnet
+    # Subnet 2
+    Subnet2:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: !Ref Subnet2CidrBlock
+            AvailabilityZone: !Select [1, !GetAZs ]
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-Subnet2
+    # RouteTable 2
+    RouteTable2:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-RouteTable2
+    Route2:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref RouteTable2
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+    Subnet2RouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref RouteTable2
+            SubnetId: !Ref Subnet2
+    # SecurityGroup
+    SecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: !Sub ${AWS::StackName}-SecurityGroup
+            GroupDescription: Security Group
+            VpcId: !Ref Vpc
+    OutboundRule1:
+        Type: AWS::EC2::SecurityGroupEgress
+        Properties:
+            GroupId: !Ref SecurityGroup
+            IpProtocol: "-1"
+            FromPort: 0
+            ToPort: 65535
+            CidrIp: 0.0.0.0/0
+    InboundRule1:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            GroupId: !Ref SecurityGroup
+            IpProtocol: tcp
+            FromPort: !Ref DbPort
+            ToPort: !Ref DbPort
+            CidrIp: 0.0.0.0/0
+    # PostgreSQL RDS
+    DbSubnetGroup:
+        Type: AWS::RDS::DBSubnetGroup
+        Properties:
+            DBSubnetGroupName: !Sub ${AWS::StackName}-DbSubnetGroup
+            DBSubnetGroupDescription: DB subnet group
+            SubnetIds:
+                - !Ref Subnet
+                - !Ref Subnet2
+    DbInstance:
+        Type: AWS::RDS::DBInstance
+        DeletionPolicy: Delete
+        Properties:
+            DBInstanceClass: !Ref DbInstanceClass
+            AllocatedStorage: !Ref DbMaxAllocatedStorage
+            Engine: !Ref DbEngine
+            EngineVersion: !Ref DbEngineVersion
+            Port: !Ref DbPort
+            DBName: !Ref DbName
+            MasterUsername: !Ref DbUser
+            MasterUserPassword: !Ref DbPassword
+            PubliclyAccessible: true
+            DBSubnetGroupName: !Ref DbSubnetGroup
+            VPCSecurityGroups:
+                - !Ref SecurityGroup
+Outputs:
+    # VPC
+    VpcId:
+        Description: VPC ID
+        Value: !Ref Vpc
+    VpcCidrBlock:
+        Description: VPC CIDR block
+        Value: !GetAtt Vpc.CidrBlock
+    # Subnet
+    SubnetId:
+        Description: Subnet ID
+        Value: !Ref Subnet
+    SubnetAvailabilityZone:
+        Description: Subnet AvailabilityZone
+        Value: !GetAtt Subnet.AvailabilityZone
+    # Subnet2
+    Subnet2Id:
+        Description: Subnet 2 ID
+        Value: !Ref Subnet2
+    Subnet2AvailabilityZone:
+        Description: Subnet 2 AvailabilityZone
+        Value: !GetAtt Subnet2.AvailabilityZone
+    # PostgreSQL RDS
+    DbInstanceName:
+        Description: DB instance name
+        Value: !Ref DbInstance
+    DbInstanceEndpointAddress:
+        Description: DB instance name endpoint address
+        Value: !GetAtt DbInstance.Endpoint.Address
+        Export:
+            Name: RdsEndpointAddress
+    DbInstanceEndpointPort:
+        Description: DB instance name endpoint port
+        Value: !GetAtt DbInstance.Endpoint.Port
+        Export:
+            Name: RdsEndpointPort

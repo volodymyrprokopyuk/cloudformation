@@ -1,0 +1,167 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+    Create Lambdas for transferring data from Kinesis Firehose delivery streams S3
+    bucket to RDS
+Parameters:
+    # RDS
+    DbName:
+        Description: Database name
+        Type: String
+    DbUser:
+        Description: Database master user
+        Type: String
+    DbPassword:
+        Description: Database master user password
+        Type: String
+    # S3
+    LambdaPackageS3BucketName:
+        Description: Lambda package S3 bucket name
+        Type: String
+    # Lambda
+    LambdaLogLevel:
+        Description: Lambda log level
+        Type: String
+        Default: DEBUG
+    LambdaPythonRuntime:
+        Description: Lambda Python runtime
+        Type: String
+        Default: python3.7
+    LambdaTimeoutSec:
+        Description: Lambda timeout
+        Type: String
+        Default: 300
+    PutProductInDbLambdaVersion:
+        Description: PutProductInDb lambda version
+        Type: String
+    PutInfringementInDbLambdaVersion:
+        Description: PutInfringementInDb lambda version
+        Type: String
+Resources:
+    # Lambda IAM Role
+    PutDataInDbLambdaIamPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            ManagedPolicyName: PutDataInDbLambdaIamPolicy
+            Description: Grants access to Lambda to get data from S3 and put data into RDS
+            Path: /
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    # S3
+                    - Effect: Allow
+                      Action:
+                          - s3:GetBucketLocation
+                          - s3:ListBucket
+                          - s3:GetObject
+                          - s3:ListBucketMultipartUploads
+                      Resource:
+                          - !Sub
+                              - ${FirehoseDeliveryStreamS3BucketArn}/*
+                              - FirehoseDeliveryStreamS3BucketArn: !ImportValue FirehoseDeliveryStreamS3BucketArn
+                    # RDS
+                    - Effect: Allow
+                      Action:
+                          - rds:*
+                      Resource:
+                          - arn:aws:rds:*:*:*
+                    # CloudWatch
+                    - Effect: Allow
+                      Action:
+                          - logs:*
+                      Resource:
+                          - arn:aws:logs:*:*:*
+    PutDataInDbLambdaIamRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: PutDataInDbLambdaIamRole
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+            ManagedPolicyArns:
+                - !Ref PutDataInDbLambdaIamPolicy
+    # Product lambda
+    PutProductInDbLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: PutProductInDbLambda
+            Description: Put products into database
+            Runtime: !Ref LambdaPythonRuntime
+            Timeout: !Ref LambdaTimeoutSec
+            Environment:
+                Variables:
+                    STACK_NAME: !Sub ${AWS::StackName}
+                    LAMBDA_VERSION: !Ref PutProductInDbLambdaVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
+                    DB_HOST: !ImportValue RdsEndpointAddress
+                    DB_PORT: !ImportValue RdsEndpointPort
+                    DB_NAME: !Ref DbName
+                    DB_USER: !Ref DbUser
+                    DB_PASSWORD: !Ref DbPassword
+            Code:
+                S3Bucket: !Ref LambdaPackageS3BucketName
+                S3Key: !Sub PutProductInDbLambda-${PutProductInDbLambdaVersion}.zip
+            Handler: lambda_function.lambda_handler
+            Role: !GetAtt PutDataInDbLambdaIamRole.Arn
+    InvokePutProductInDbLambdaPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            Action: lambda:InvokeFunction
+            FunctionName: !GetAtt PutProductInDbLambda.Arn
+            Principal: s3.amazonaws.com
+            SourceArn: !ImportValue FirehoseDeliveryStreamS3BucketArn
+    # Infringement lambda
+    PutInfringementInDbLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: PutInfringementInDbLambda
+            Description: Put infringements into database
+            Runtime: !Ref LambdaPythonRuntime
+            Timeout: !Ref LambdaTimeoutSec
+            Environment:
+                Variables:
+                    STACK_NAME: !Sub ${AWS::StackName}
+                    LAMBDA_VERSION: !Ref PutInfringementInDbLambdaVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
+                    DB_HOST: !ImportValue RdsEndpointAddress
+                    DB_PORT: !ImportValue RdsEndpointPort
+                    DB_NAME: !Ref DbName
+                    DB_USER: !Ref DbUser
+                    DB_PASSWORD: !Ref DbPassword
+            Code:
+                S3Bucket: !Ref LambdaPackageS3BucketName
+                S3Key: !Sub PutInfringementInDbLambda-${PutInfringementInDbLambdaVersion}.zip
+            Handler: lambda_function.lambda_handler
+            Role: !GetAtt PutDataInDbLambdaIamRole.Arn
+    InvokePutInfringementInDbLambdaPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            Action: lambda:InvokeFunction
+            FunctionName: !GetAtt PutInfringementInDbLambda.Arn
+            Principal: s3.amazonaws.com
+            SourceArn: !ImportValue FirehoseDeliveryStreamS3BucketArn
+Outputs:
+    # Lambda
+    PutProductInDbLambdaName:
+        Description: PutProductInDb lambda name
+        Value: !Ref PutProductInDbLambda
+    PutProductInDbLambdaArn:
+        Description: PutProductInDb lambda ARN
+        Value: !GetAtt PutProductInDbLambda.Arn
+        Export:
+            Name: PutProductInDbLambdaArn
+    PutInfringementInDbLambdaName:
+        Description: PutInfringementInDb lambda name
+        Value: !Ref PutInfringementInDbLambda
+    PutInfringementInDbLambdaArn:
+        Description: PutInfringementInDb lambda ARN
+        Value: !GetAtt PutInfringementInDbLambda.Arn
+        Export:
+            Name: PutInfringementInDbLambdaArn
