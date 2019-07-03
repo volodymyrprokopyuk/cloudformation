@@ -5,6 +5,15 @@ Description: >-
     bucket to RDS
 Parameters:
     # RDS
+    RdsDbInstanceArnExportName:
+        Description: RDS database instance ARN export name
+        Type: String
+    RdsEndpointAddressExportName:
+        Description: RDS database endpoint address export name
+        Type: String
+    RdsEndpointPortExportName:
+        Description: RDS database endpoint port export name
+        Type: String
     DbName:
         Description: Database name
         Type: String
@@ -15,14 +24,13 @@ Parameters:
         Description: Database master user password
         Type: String
     # S3
-    LambdaPackageS3BucketName:
+    S3FirehoseInfringementDeliveryBucketArnExportName:
+        Description: Kinesis Firehose infringement delivey S3 bucket ARN export name
+        Type: String
+    S3LambdaPackageBucketName:
         Description: Lambda package S3 bucket name
         Type: String
     # Lambda
-    LambdaLogLevel:
-        Description: Lambda log level
-        Type: String
-        Default: INFO
     LambdaPythonRuntime:
         Description: Lambda Python runtime
         Type: String
@@ -31,18 +39,22 @@ Parameters:
         Description: Lambda timeout
         Type: Number
         Default: 300
-    PutProductInDbLambdaVersion:
+    LambdaLogLevel:
+        Description: Lambda log level
+        Type: String
+        Default: INFO
+    LambdaPutProductInDbVersion:
         Description: PutProductInDb lambda version
         Type: String
-    PutInfringementInDbLambdaVersion:
+    LambdaPutInfringementInDbVersion:
         Description: PutInfringementInDb lambda version
         Type: String
 Resources:
     # Lambda IAM Role
-    PutDataInDbLambdaIamPolicy:
+    IamPutDataInDbLambdaPolicy:
         Type: AWS::IAM::ManagedPolicy
         Properties:
-            ManagedPolicyName: PutDataInDbLambdaIamPolicy
+            ManagedPolicyName: !Sub ${AWS::StackName}-IamPutDataInDbLambdaPolicy
             Description: Grants access to Lambda to get data from S3 and put data into RDS
             Path: /
             PolicyDocument:
@@ -55,26 +67,26 @@ Resources:
                           - s3:ListBucket
                           - s3:GetObject
                           - s3:ListBucketMultipartUploads
-                      Resource:
-                          - !Sub
-                              - ${FirehoseDeliveryStreamS3BucketArn}/*
-                              - FirehoseDeliveryStreamS3BucketArn: !ImportValue FirehoseDeliveryStreamS3BucketArn
+                      Resource: !Sub
+                          - ${S3FirehoseInfringementDeliveryBucketArn}/*
+                          - S3FirehoseInfringementDeliveryBucketArn:
+                              Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
                     # RDS
                     - Effect: Allow
                       Action:
                           - rds:*
                       Resource:
-                          - !ImportValue RdsDbInstanceArn
+                          Fn::ImportValue: !Ref RdsDbInstanceArnExportName
                     # CloudWatch
                     - Effect: Allow
                       Action:
                           - logs:*
                       Resource:
                           - arn:aws:logs:*:*:*
-    PutDataInDbLambdaIamRole:
+    IamPutDataInDbLambdaRole:
         Type: AWS::IAM::Role
         Properties:
-            RoleName: PutDataInDbLambdaIamRole
+            RoleName: !Sub ${AWS::StackName}-IamPutDataInDbLambdaRole
             Path: /
             AssumeRolePolicyDocument:
                 Version: 2012-10-17
@@ -86,37 +98,40 @@ Resources:
                           Service:
                               - lambda.amazonaws.com
             ManagedPolicyArns:
-                - !Ref PutDataInDbLambdaIamPolicy
+                - !Ref IamPutDataInDbLambdaPolicy
     # Product lambda
     PutProductInDbLambda:
         Type: AWS::Lambda::Function
         Properties:
-            FunctionName: PutProductInDbLambda
+            FunctionName: !Sub ${AWS::StackName}-PutProductInDbLambda
             Description: Put products into database
             Runtime: !Ref LambdaPythonRuntime
             Timeout: !Ref LambdaTimeoutSec
             Environment:
                 Variables:
                     STACK_NAME: !Ref AWS::StackName
-                    LAMBDA_VERSION: !Ref PutProductInDbLambdaVersion
+                    LAMBDA_VERSION: !Ref LambdaPutProductInDbVersion
                     LOG_LEVEL: !Ref LambdaLogLevel
-                    DB_HOST: !ImportValue RdsEndpointAddress
-                    DB_PORT: !ImportValue RdsEndpointPort
+                    DB_HOST:
+                        Fn::ImportValue: !Ref RdsEndpointAddressExportName
+                    DB_PORT:
+                        Fn::ImportValue: !Ref RdsEndpointPortExportName
                     DB_NAME: !Ref DbName
                     DB_USER: !Ref DbUser
                     DB_PASSWORD: !Ref DbPassword
             Code:
-                S3Bucket: !Ref LambdaPackageS3BucketName
-                S3Key: !Sub PutProductInDbLambda-${PutProductInDbLambdaVersion}.zip
+                S3Bucket: !Ref S3LambdaPackageBucketName
+                S3Key: !Sub PutProductInDbLambda-${LambdaPutProductInDbVersion}.zip
             Handler: lambda_function.lambda_handler
-            Role: !GetAtt PutDataInDbLambdaIamRole.Arn
-    InvokePutProductInDbLambdaPermission:
+            Role: !GetAtt IamPutDataInDbLambdaRole.Arn
+    S3InvokePutProductInDbLambdaPermission:
         Type: AWS::Lambda::Permission
         Properties:
             Action: lambda:InvokeFunction
             FunctionName: !GetAtt PutProductInDbLambda.Arn
             Principal: s3.amazonaws.com
-            SourceArn: !ImportValue FirehoseDeliveryStreamS3BucketArn
+            SourceArn:
+                Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
     # Infringement lambda
     PutInfringementInDbLambda:
         Type: AWS::Lambda::Function
@@ -128,41 +143,50 @@ Resources:
             Environment:
                 Variables:
                     STACK_NAME: !Ref AWS::StackName
-                    LAMBDA_VERSION: !Ref PutInfringementInDbLambdaVersion
+                    LAMBDA_VERSION: !Ref LambdaPutInfringementInDbVersion
                     LOG_LEVEL: !Ref LambdaLogLevel
-                    DB_HOST: !ImportValue RdsEndpointAddress
-                    DB_PORT: !ImportValue RdsEndpointPort
+                    DB_HOST:
+                        Fn::ImportValue: !Ref RdsEndpointAddressExportName
+                    DB_PORT:
+                        Fn::ImportValue: !Ref RdsEndpointPortExportName
                     DB_NAME: !Ref DbName
                     DB_USER: !Ref DbUser
                     DB_PASSWORD: !Ref DbPassword
             Code:
-                S3Bucket: !Ref LambdaPackageS3BucketName
-                S3Key: !Sub PutInfringementInDbLambda-${PutInfringementInDbLambdaVersion}.zip
+                S3Bucket: !Ref S3LambdaPackageBucketName
+                S3Key: !Sub PutInfringementInDbLambda-${LambdaPutInfringementInDbVersion}.zip
             Handler: lambda_function.lambda_handler
-            Role: !GetAtt PutDataInDbLambdaIamRole.Arn
-    InvokePutInfringementInDbLambdaPermission:
+            Role: !GetAtt IamPutDataInDbLambdaRole.Arn
+    S3InvokePutInfringementInDbLambdaPermission:
         Type: AWS::Lambda::Permission
         Properties:
             Action: lambda:InvokeFunction
             FunctionName: !GetAtt PutInfringementInDbLambda.Arn
             Principal: s3.amazonaws.com
-            SourceArn: !ImportValue FirehoseDeliveryStreamS3BucketArn
+            SourceArn:
+                Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
 Outputs:
     # Product Lambda
     PutProductInDbLambdaName:
         Description: PutProductInDb lambda name
         Value: !Ref PutProductInDbLambda
+    PutProductInDbLambdaVersion:
+        Description: PutProductInDb lambda version
+        Value: !Ref LambdaPutInfringementInDbVersion
     PutProductInDbLambdaArn:
         Description: PutProductInDb lambda ARN
         Value: !GetAtt PutProductInDbLambda.Arn
         Export:
-            Name: PutProductInDbLambdaArn
+            Name: !Sub ${AWS::StackName}:PutProductInDbLambdaArn
     # Infringement Lambda
     PutInfringementInDbLambdaName:
         Description: PutInfringementInDb lambda name
         Value: !Ref PutInfringementInDbLambda
+    PutInfringementInDbLambdaVersion:
+        Description: PutInfringementInDb lambda version
+        Value: !Ref LambdaPutInfringementInDbVersion
     PutInfringementInDbLambdaArn:
         Description: PutInfringementInDb lambda ARN
         Value: !GetAtt PutInfringementInDbLambda.Arn
         Export:
-            Name: PutInfringementInDbLambdaArn
+            Name: !Sub ${AWS::StackName}:PutInfringementInDbLambdaArn

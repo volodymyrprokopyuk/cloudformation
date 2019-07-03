@@ -1,12 +1,40 @@
-"""Send product and infringement files to AWS Kinesis Firehose delivery streams"""
+"""Send product and infringement files to Kinesis Firehose delivery streams"""
+import os
 import sys
 import boto3
 
-USAGE = "Usage: python main.py {-p <product file> | -i <infringment file>}"
+
+def _validate_request():
+    errors = []
+    # Check command line agruments
+    if len(sys.argv) != 3 or sys.argv[1] not in ("-p", "-i"):
+        errors.append(
+            "Usage: python main.py {-p <product file> | -i <infringment file>}"
+        )
+    envs = [
+        "FIREHOSE_PRODUCT_DELIVERY_STREAM_NAME",
+        "FIREHOSE_INFRINGEMENT_DELIVERY_STREAM_NAME",
+    ]
+    # Check environment variables
+    for env in envs:
+        if not os.getenv(env):
+            errors.append(f"Mandatory {env} environment variable is not provided")
+    return errors
 
 
-# Kinesis Firehose delivery stream names configuration
-FIREHOSE_STREAMS = {"-p": "ProductDeliveryStream", "-i": "InfringementDeliveryStream"}
+def _prepare_request():
+    request = {}
+    # Kinesis Firehose delivery stream names configuration
+    delivery_streams = {
+        "-p": os.getenv("FIREHOSE_PRODUCT_DELIVERY_STREAM_NAME"),
+        "-i": os.getenv("FIREHOSE_INFRINGEMENT_DELIVERY_STREAM_NAME"),
+    }
+    # Get Kinesis Firehose delivery stream name corresponding to the type of the data
+    # file to send to the Kinesis Firehose delivery stream
+    request["stream_name"] = delivery_streams[sys.argv[1]]
+    # Get the name of the data file to send to the Kinesis Firehose delivery stream
+    request["data_file"] = sys.argv[2]
+    return request
 
 
 def send_file_to_delivery_stream(data_file, stream_name):
@@ -31,17 +59,16 @@ def send_file_to_delivery_stream(data_file, stream_name):
 
 
 def main():
-    """Send product and infringement files to AWS Kinesis Firehose delivery streams"""
-    if len(sys.argv) != 3 or sys.argv[1] not in ("-p", "-i"):
-        print(USAGE)
+    """Send product and infringement files to Kinesis Firehose delivery streams"""
+    # Validate command line arguments and environment variables
+    errors = _validate_request()
+    if errors:
+        print(f"ERROR: request validation: {errors}")
         exit(1)
-    # Get Kinesis Firehose delivery stream name corresponding to the type of the data
-    # file to send to the Kinesis Firehose delivery stream
-    stream_name = FIREHOSE_STREAMS[sys.argv[1]]
-    # Get the name of the data file to send to the Kinesis Firehose delivery stream
-    data_file = sys.argv[2]
+    # Prepare data file and Kinesis Firehose delivery stream name
+    request = _prepare_request()
     # Send data file to Kinesis Firehose delivery stream
-    send_file_to_delivery_stream(data_file, stream_name)
+    send_file_to_delivery_stream(request["data_file"], request["stream_name"])
 
 
 if __name__ == "__main__":

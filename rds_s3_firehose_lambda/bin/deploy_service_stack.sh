@@ -8,28 +8,29 @@ read -d "" USAGE <<EOF
 Usage:
     ./bin/deploy_service_stack target [-c]"
 Target:
+    infringement-store - deploy PostgreSQL RDS
     infringement-ingest - deploy Kinesis Firehose delivery streams and S3 bucket
     infringement-transform - deploy data transformation Lambdas
-    infringement-store - deploy PostgreSQL RDS
-    infringement-expose - deploy API Gateway with backed by endpoint Lambdas
+    infringement-expose - deploy API Gateway backed by endpoint Lambdas
 Options:
     -c create stack, if -c is omitted then update stack
 EOF
 
-readonly APPLICATION=infringement
 readonly CF_DIR=$(pwd)/cloudformation
 
 function deploy_infringement_ingest_stack {
     local stack_action=${1?ERROR: mandatory CloudFormation stack action is not provided}
     local stack_template=$CF_DIR/infringement_ingest.yaml
     local service=ingest
-    local stack_name=$APPLICATION-$service
-    local firehose_delivery_stream_s3_bucket_name=${stack_name}-firehose-delivery-stream
+    local stack_name=$APPLICATION-$service-$ENVIRONMENT
+    # Compose bucket name
+    local lower_stack_name=$(echo $stack_name | tr '[:upper:]' '[:lower:]')
+    local bucket_name=$lower_stack_name-$S3_FIREHOSE_INFRINGEMENT_DELIVERY_BUCKET_SUFFIX
 
     aws cloudformation $stack_action --stack-name $stack_name \
         --template-body file://$stack_template \
         --parameters \
-        ParameterKey=FirehoseDeliveryStreamS3BucketName,ParameterValue=$firehose_delivery_stream_s3_bucket_name \
+        ParameterKey=S3FirehoseInfringementDeliveryBucketName,ParameterValue=$bucket_name \
         --capabilities CAPABILITY_NAMED_IAM
 }
 
@@ -37,18 +38,22 @@ function deploy_infringement_transform_stack {
     local stack_action=${1?ERROR: mandatory CloudFormation stack action is not provided}
     local stack_template=$CF_DIR/infringement_transform.yaml
     local service=transform
-    local stack_name=$APPLICATION-$service
+    local stack_name=$APPLICATION-$service-$ENVIRONMENT
 
     aws cloudformation $stack_action --stack-name $stack_name \
         --template-body file://$stack_template \
         --parameters \
+        ParameterKey=RdsDbInstanceArnExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:RdsDbInstanceArn \
+        ParameterKey=RdsEndpointAddressExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:RdsEndpointAddress \
+        ParameterKey=RdsEndpointPortExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:RdsEndpointPort \
         ParameterKey=DbName,ParameterValue=$DB_NAME \
         ParameterKey=DbUser,ParameterValue=$DB_USER \
         ParameterKey=DbPassword,ParameterValue=$DB_PASSWORD \
-        ParameterKey=LambdaPackageS3BucketName,ParameterValue=$S3_LAMBDA_PACKAGE_BUCKET_NAME \
-        ParameterKey=PutProductInDbLambdaVersion,ParameterValue=$LAMBDA_PUT_PRODUCT_IN_DB_VERSION \
-        ParameterKey=PutInfringementInDbLambdaVersion,ParameterValue=$LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION \
+        ParameterKey=S3FirehoseInfringementDeliveryBucketArnExportName,ParameterValue=$APPLICATION-ingest-$ENVIRONMENT:S3FirehoseInfringementDeliveryBucketArn \
+        ParameterKey=S3LambdaPackageBucketName,ParameterValue=$S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME \
         ParameterKey=LambdaLogLevel,ParameterValue=$LAMBDA_LOG_LEVEL \
+        ParameterKey=LambdaPutProductInDbVersion,ParameterValue=$LAMBDA_PUT_PRODUCT_IN_DB_VERSION \
+        ParameterKey=LambdaPutInfringementInDbVersion,ParameterValue=$LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION \
         --capabilities CAPABILITY_NAMED_IAM
 }
 
@@ -56,7 +61,7 @@ function deploy_infringement_store_stack {
     local stack_action=${1?ERROR: mandatory CloudFormation stack action is not provided}
     local stack_template=$CF_DIR/infringement_store.yaml
     local service=store
-    local stack_name=$APPLICATION-$service
+    local stack_name=$APPLICATION-$service-$ENVIRONMENT
 
     aws cloudformation $stack_action --stack-name $stack_name \
         --template-body file://$stack_template \
@@ -71,28 +76,28 @@ function deploy_infringement_expose_stack {
     local stack_action=${1?ERROR: mandatory CloudFormation stack action is not provided}
     local stack_template=$CF_DIR/infringement_expose.yaml
     local service=expose
-    local stack_name=$APPLICATION-$service
+    local stack_name=$APPLICATION-$service-$ENVIRONMENT
 }
 
 function deploy_service_stack {
     # CloudFormation stack action
-    CF_STACK_ACTION=update-stack
+    local stack_action=update-stack
     if [[ $2 == -c ]]; then
-        CF_STACK_ACTION=create-stack
+        stack_action=create-stack
     fi
     # CloudFormation service stack
     case $1 in
         infringement-ingest)
-            deploy_infringement_ingest_stack $CF_STACK_ACTION
+            deploy_infringement_ingest_stack $stack_action
             ;;
         infringement-transform)
-            deploy_infringement_transform_stack $CF_STACK_ACTION
+            deploy_infringement_transform_stack $stack_action
             ;;
         infringement-store)
-            deploy_infringement_store_stack $CF_STACK_ACTION
+            deploy_infringement_store_stack $stack_action
             ;;
         infringement-expose)
-            deploy_infringement_expose_stack $CF_STACK_ACTION
+            deploy_infringement_expose_stack $stack_action
             ;;
         *)
             echo "${USAGE}"
@@ -101,18 +106,3 @@ function deploy_service_stack {
 }
 
 deploy_service_stack $@
-
-# Create [-c] or update CloudFormation stack
-# aws cloudformation $CF_STACK_ACTION --stack-name $CF_STACK_NAME \
-#     --template-body file://$CF_TEMPLATE \
-#     --parameters \
-#     ParameterKey=DbPort,ParameterValue=$DB_PORT \
-#     ParameterKey=DbName,ParameterValue=$DB_NAME \
-#     ParameterKey=DbUser,ParameterValue=$DB_USER \
-#     ParameterKey=DbPassword,ParameterValue=$DB_PASSWORD \
-#     ParameterKey=FirehoseDeliveryStreamS3BucketName,ParameterValue=$S3_FIREHOSE_DELIVERY_STREAM_BUCKET_NAME \
-#     ParameterKey=LambdaPackageS3BucketName,ParameterValue=$S3_LAMBDA_PACKAGE_BUCKET_NAME \
-#     ParameterKey=PutProductInDbLambdaVersion,ParameterValue=$LAMBDA_PUT_PRODUCT_IN_DB_VERSION \
-#     ParameterKey=PutInfringementInDbLambdaVersion,ParameterValue=$LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION \
-#     ParameterKey=LambdaLogLevel,ParameterValue=$LAMBDA_LOG_LEVEL \
-#     --capabilities CAPABILITY_NAMED_IAM

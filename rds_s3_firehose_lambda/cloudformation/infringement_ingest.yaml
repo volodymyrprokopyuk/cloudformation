@@ -4,8 +4,8 @@ Description: >-
     Create Kinesis Firehose delivery streams with associated S3 bucket
 Parameters:
     # S3
-    FirehoseDeliveryStreamS3BucketName:
-        Description: Kinesis Firehose delivery stream S3 bucket name
+    S3FirehoseInfringementDeliveryBucketName:
+        Description: Kinesis Firehose infringement delivery S3 bucket suffix
         Type: String
     # Kinesis Firehose
     FirehoseBufferSizeMb:
@@ -18,11 +18,11 @@ Parameters:
         Default: 60
 Resources:
     # Kinesis Firehose delivery stream S3 bucket
-    FirehoseDeliveryStreamS3Bucket:
+    S3FirehoseInfringementDeliveryBucket:
         Type: AWS::S3::Bucket
         DeletionPolicy: Delete
         Properties:
-            BucketName: !Ref FirehoseDeliveryStreamS3BucketName
+            BucketName: !Ref S3FirehoseInfringementDeliveryBucketName
             # NotificationConfiguration causes circular dependency error
             # NotificationConfiguration:
             #     LambdaConfigurations:
@@ -35,11 +35,13 @@ Resources:
             #                         Value: product/
             #           Function: !GetAtt PutProductInDbLambda.Arn
     # Kinesis Firehose IAM Role
-    FirehoseDeliveryStreamIamPolicy:
+    IamFirehoseInfringementDeliveryPolicy:
         Type: AWS::IAM::ManagedPolicy
         Properties:
-            ManagedPolicyName: FirehoseDeliveryStreamIamPolicy
-            Description: Grants access to Kinesis Firehose delivery stream to put data to S3
+            ManagedPolicyName: !Sub ${AWS::StackName}-IamFirehoseInfringementDeliveryPolicy
+            Description: >-
+                Grants access to Kinesis Firehose infringement delivery stream to put
+                data into S3 bucket
             Path: /
             PolicyDocument:
                 Version: 2012-10-17
@@ -54,17 +56,17 @@ Resources:
                           - s3:ListBucketMultipartUploads
                           - s3:AbortMultipartUpload
                       Resource:
-                          - !Sub ${FirehoseDeliveryStreamS3Bucket.Arn}/*
+                          - !Sub ${S3FirehoseInfringementDeliveryBucket.Arn}/*
                     # CloudWatch
                     - Effect: Allow
                       Action:
                           - logs:*
                       Resource:
                           - arn:aws:logs:*:*:*
-    FirehoseDeliveryStreamIamRole:
+    IamFirehoseInfringementDeliveryRole:
         Type: AWS::IAM::Role
         Properties:
-            RoleName: FirehoseDeliveryStreamIamRole
+            RoleName: !Sub ${AWS::StackName}-IamFirehoseInfringementDeliveryRole
             Path: /
             AssumeRolePolicyDocument:
                 Version: 2012-10-17
@@ -76,58 +78,64 @@ Resources:
                           Service:
                               - firehose.amazonaws.com
             ManagedPolicyArns:
-                - !Ref FirehoseDeliveryStreamIamPolicy
-    # Kinesis Firehose delivery streams
+                - !Ref IamFirehoseInfringementDeliveryPolicy
+    # Kinesis Firehose product delivery stream
     ProductDeliveryStream:
         Type: AWS::KinesisFirehose::DeliveryStream
         Properties:
-            DeliveryStreamName: ProductDeliveryStream
+            DeliveryStreamName: !Sub ${AWS::StackName}-ProductDeliveryStream
             DeliveryStreamType: DirectPut
             S3DestinationConfiguration:
-                BucketARN: !GetAtt FirehoseDeliveryStreamS3Bucket.Arn
+                BucketARN: !GetAtt S3FirehoseInfringementDeliveryBucket.Arn
                 BufferingHints:
                     SizeInMBs: !Ref FirehoseBufferSizeMb
                     IntervalInSeconds: !Ref FirehoseBufferIntervalSec
                 CompressionFormat: UNCOMPRESSED
                 Prefix: product/
                 ErrorOutputPrefix: product-error/
-                RoleARN: !GetAtt FirehoseDeliveryStreamIamRole.Arn
+                RoleARN: !GetAtt IamFirehoseInfringementDeliveryRole.Arn
                 CloudWatchLoggingOptions:
                     Enabled: true
-                    LogGroupName: FirehoseDeliveryGroup
-                    LogStreamName: ProductDeliveryStream
+                    LogGroupName: !Sub ${AWS::StackName}-FirehoseInfringementDeliveryGroup
+                    LogStreamName: !Sub ${AWS::StackName}-ProductDeliveryStream
+    # Kinesis Firehose infringement delivery stream
     InfringementDeliveryStream:
         Type: AWS::KinesisFirehose::DeliveryStream
         Properties:
-            DeliveryStreamName: InfringementDeliveryStream
+            DeliveryStreamName: !Sub ${AWS::StackName}-InfringementDeliveryStream
             DeliveryStreamType: DirectPut
             S3DestinationConfiguration:
-                BucketARN: !GetAtt FirehoseDeliveryStreamS3Bucket.Arn
+                BucketARN: !GetAtt S3FirehoseInfringementDeliveryBucket.Arn
                 BufferingHints:
                     SizeInMBs: !Ref FirehoseBufferSizeMb
                     IntervalInSeconds: !Ref FirehoseBufferIntervalSec
                 CompressionFormat: UNCOMPRESSED
                 Prefix: infringement/
                 ErrorOutputPrefix: infringement-error/
-                RoleARN: !GetAtt FirehoseDeliveryStreamIamRole.Arn
+                RoleARN: !GetAtt IamFirehoseInfringementDeliveryRole.Arn
                 CloudWatchLoggingOptions:
                     Enabled: true
-                    LogGroupName: FirehoseDeliveryGroup
-                    LogStreamName: InfringementDeliveryStream
+                    LogGroupName: !Sub ${AWS::StackName}-FirehoseInfringementDeliveryGroup
+                    LogStreamName: !Sub ${AWS::StackName}-InfringementDeliveryStream
 Outputs:
     # Kinesis Firehose delivery stream S3 bucket
-    FirehoseDeliveryStreamS3BucketName:
-        Description: Kinesis Firehose delivery stream S3 bucket name
-        Value: !Ref FirehoseDeliveryStreamS3Bucket
-    FirehoseDeliveryStreamS3BucketArn:
-        Description: Kinesis Firehose delivery stream S3 bucket name
-        Value: !GetAtt FirehoseDeliveryStreamS3Bucket.Arn
+    S3FirehoseInfringementDeliveryBucketName:
+        Description: Kinesis Firehose infringement delivery S3 bucket name
+        Value: !Ref S3FirehoseInfringementDeliveryBucket
+    S3FirehoseInfringementDeliveryBucketArn:
+        Description: Kinesis Firehose infirngement delivery S3 bucket ARN
+        Value: !GetAtt S3FirehoseInfringementDeliveryBucket.Arn
         Export:
-            Name: FirehoseDeliveryStreamS3BucketArn
-    # Kinesis Firehose delivery streams
+            Name: !Sub ${AWS::StackName}:S3FirehoseInfringementDeliveryBucketArn
+    # Kinesis Firehose product delivery stream
     ProductDeliveryStreamName:
-        Description: Product delivery stream name
+        Description: Kineis product delivery stream name
         Value: !Ref ProductDeliveryStream
+        Export:
+            Name: !Sub ${AWS::StackName}:ProductDeliveryStreamName
+    # Kinesis Firehose infringement delivery stream
     InfringementDeliveryStreamName:
-        Description: Infringement delivery stream name
+        Description: Kinesis infringement delivery stream name
         Value: !Ref InfringementDeliveryStream
+        Export:
+            Name: !Sub ${AWS::StackName}:InfringementDeliveryStreamName
