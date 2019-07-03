@@ -36,7 +36,7 @@ cp -r psycopg2-3.7 lambda/lib/psycopg2
 
 # Upload the product.txt and the infringement.txt
 # to the corresponding Kinesis Firehose delivery streams
-./bin/send_data.sh
+./bin/send_data_to_firehose.sh
 
 
 # DELETE APPLICATION SERVICE STACKS
