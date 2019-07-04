@@ -40,7 +40,7 @@ Resources:
         Properties:
             ManagedPolicyName: !Sub ${AWS::StackName}-IamFirehoseInfringementDeliveryPolicy
             Description: >-
-                Grants access to Kinesis Firehose infringement delivery stream to put
+                Grants access to Kinesis Firehose infringement delivery streams to put
                 data into S3 bucket
             Path: /
             PolicyDocument:
@@ -52,10 +52,10 @@ Resources:
                           - s3:GetBucketLocation
                           - s3:ListBucket
                           - s3:PutObject
-                          - s3:GetObject
                           - s3:ListBucketMultipartUploads
                           - s3:AbortMultipartUpload
                       Resource:
+                          - !GetAtt S3FirehoseInfringementDeliveryBucket.Arn
                           - !Sub ${S3FirehoseInfringementDeliveryBucket.Arn}/*
                     # CloudWatch
                     - Effect: Allow

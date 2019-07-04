@@ -55,7 +55,8 @@ Resources:
         Type: AWS::IAM::ManagedPolicy
         Properties:
             ManagedPolicyName: !Sub ${AWS::StackName}-IamPutDataInDbLambdaPolicy
-            Description: Grants access to Lambda to get data from S3 and put data into RDS
+            Description: >-
+                Grants access to Lambda to get data from S3 and put data into RDS
             Path: /
             PolicyDocument:
                 Version: 2012-10-17
@@ -67,16 +68,20 @@ Resources:
                           - s3:ListBucket
                           - s3:GetObject
                           - s3:ListBucketMultipartUploads
-                      Resource: !Sub
-                          - ${S3FirehoseInfringementDeliveryBucketArn}/*
-                          - S3FirehoseInfringementDeliveryBucketArn:
-                              Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
-                    # RDS
-                    - Effect: Allow
-                      Action:
-                          - rds:*
                       Resource:
-                          Fn::ImportValue: !Ref RdsDbInstanceArnExportName
+                          - Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
+                          - !Sub
+                              - ${S3FirehoseInfringementDeliveryBucketArn}/*
+                              - S3FirehoseInfringementDeliveryBucketArn:
+                                  Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
+                    # RDS
+                    # Data access permissions are managed by database users, not RDS
+                    # service permissions
+                    # - Effect: Allow
+                    #   Action:
+                    #       - rds:*
+                    #   Resource:
+                    #       Fn::ImportValue: !Ref RdsDbInstanceArnExportName
                     # CloudWatch
                     - Effect: Allow
                       Action:
