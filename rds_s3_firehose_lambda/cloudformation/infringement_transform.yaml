@@ -141,7 +141,7 @@ Resources:
     PutInfringementInDbLambda:
         Type: AWS::Lambda::Function
         Properties:
-            FunctionName: PutInfringementInDbLambda
+            FunctionName: !Sub ${AWS::StackName}-PutInfringementInDbLambda
             Description: Put infringements into database
             Runtime: !Ref LambdaPythonRuntime
             Timeout: !Ref LambdaTimeoutSec

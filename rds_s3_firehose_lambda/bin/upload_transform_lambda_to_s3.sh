@@ -6,12 +6,10 @@ source ./bin/config.sh
 source ./bin/util.sh
 
 readonly PYVENV=pyvenv
-readonly LAMBDA_DIR=$(pwd)/lambda/function
-readonly LIB_DIR=$(pwd)/lambda/lib
 
 function create_and_upload_lambda_archive_to_s3 {
     local lambda_name=${1?ERROR: mandatory lambda name is not provided}
-    local lambda_dir=$LAMBDA_DIR/$lambda_name
+    local lambda_dir=$LAMBDA_FUNCTION_DIR/$lambda_name
     local lambda_version=$(cat $lambda_dir/version)
     local lambda_archive=$lambda_dir/${lambda_name}-${lambda_version}.zip
     local deps_dir=$lambda_dir/$PYVENV/lib/python3.7/site-packages
@@ -30,7 +28,7 @@ function create_and_upload_lambda_archive_to_s3 {
     zip -9 -q -r $lambda_archive . -x '*psycopg2/*' -x '*__pycache__/*'
     # Add common shared Python code and psycopg2 with statically linked libpg
     # as AWS Lambda environment does not have libpg
-    cd $LIB_DIR
+    cd $LAMBDA_LIB_DIR
     zip -9 -q -r $lambda_archive .
     # Add lambda Python source code
     cd $lambda_dir
@@ -41,7 +39,7 @@ function create_and_upload_lambda_archive_to_s3 {
 
 create_s3_bucket_if_not_exists $S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME
 
-for lambda in $LAMBDA_DIR/*; do
+for lambda in $LAMBDA_FUNCTION_DIR/*; do
     lambda_name=${lambda##*/}
     create_and_upload_lambda_archive_to_s3 $lambda_name
 done
