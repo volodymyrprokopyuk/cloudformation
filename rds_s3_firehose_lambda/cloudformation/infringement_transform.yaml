@@ -5,9 +5,6 @@ Description: >-
     bucket to RDS
 Parameters:
     # RDS
-    RdsDbInstanceArnExportName:
-        Description: RDS database instance ARN export name
-        Type: String
     RdsEndpointAddressExportName:
         Description: RDS database endpoint address export name
         Type: String
@@ -74,14 +71,6 @@ Resources:
                               - ${S3FirehoseInfringementDeliveryBucketArn}/*
                               - S3FirehoseInfringementDeliveryBucketArn:
                                   Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
-                    # RDS
-                    # Data access permissions are managed by database users, not RDS
-                    # service permissions
-                    # - Effect: Allow
-                    #   Action:
-                    #       - rds:*
-                    #   Resource:
-                    #       Fn::ImportValue: !Ref RdsDbInstanceArnExportName
                     # CloudWatch
                     - Effect: Allow
                       Action:

@@ -8,6 +8,10 @@ Parameters:
         Description: Kinesis Firehose infringement delivery S3 bucket suffix
         Type: String
     # Kinesis Firehose
+    FirehoseInfringementDeliveryLogRetentionDays:
+        Description: Kinesis Firehose log retention period in days
+        Type: Number
+        Default: 7
     FirehoseBufferSizeMb:
         Description: Kinesis Firehose buffer size in MB
         Type: Number
@@ -23,17 +27,24 @@ Resources:
         DeletionPolicy: Delete
         Properties:
             BucketName: !Ref S3FirehoseInfringementDeliveryBucketName
-            # NotificationConfiguration causes circular dependency error
-            # NotificationConfiguration:
-            #     LambdaConfigurations:
-            #         # Product lambda
-            #         - Event: s3:ObjectCreated:*
-            #           Filter:
-            #               S3Key:
-            #                   Rules:
-            #                       - Name: prefix
-            #                         Value: product/
-            #           Function: !GetAtt PutProductInDbLambda.Arn
+    # Kinesis Firehose CloudWatch log group and log streams
+    FirehoseInfringementDeliveryLogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName: !Sub /aws/kinesisfirehose/${AWS::StackName}-InfringementDeliveryLogGroup
+            RetentionInDays: !Ref FirehoseInfringementDeliveryLogRetentionDays
+    # Product delivery log stream
+    ProductDeliveryLogStream:
+        Type: AWS::Logs::LogStream
+        Properties:
+            LogGroupName: !Ref FirehoseInfringementDeliveryLogGroup
+            LogStreamName: !Sub ${AWS::StackName}-ProductDeliveryLogStream
+    # Infringement delivery log stream
+    InfringementDeliveryLogStream:
+        Type: AWS::Logs::LogStream
+        Properties:
+            LogGroupName: !Ref FirehoseInfringementDeliveryLogGroup
+            LogStreamName: !Sub ${AWS::StackName}-InfringementDeliveryLogStream
     # Kinesis Firehose IAM Role
     IamFirehoseInfringementDeliveryPolicy:
         Type: AWS::IAM::ManagedPolicy
@@ -96,8 +107,8 @@ Resources:
                 RoleARN: !GetAtt IamFirehoseInfringementDeliveryRole.Arn
                 CloudWatchLoggingOptions:
                     Enabled: true
-                    LogGroupName: !Sub ${AWS::StackName}-FirehoseInfringementDeliveryGroup
-                    LogStreamName: !Sub ${AWS::StackName}-ProductDeliveryStream
+                    LogGroupName: !Ref FirehoseInfringementDeliveryLogGroup
+                    LogStreamName: !Ref ProductDeliveryLogStream
     # Kinesis Firehose infringement delivery stream
     InfringementDeliveryStream:
         Type: AWS::KinesisFirehose::DeliveryStream
@@ -115,8 +126,8 @@ Resources:
                 RoleARN: !GetAtt IamFirehoseInfringementDeliveryRole.Arn
                 CloudWatchLoggingOptions:
                     Enabled: true
-                    LogGroupName: !Sub ${AWS::StackName}-FirehoseInfringementDeliveryGroup
-                    LogStreamName: !Sub ${AWS::StackName}-InfringementDeliveryStream
+                    LogGroupName: !Ref FirehoseInfringementDeliveryLogGroup
+                    LogStreamName: !Ref InfringementDeliveryLogStream
 Outputs:
     # Kinesis Firehose delivery stream S3 bucket
     S3FirehoseInfringementDeliveryBucketName:

@@ -200,11 +200,6 @@ Outputs:
         Description: Subnet 2 AvailabilityZone
         Value: !GetAtt Subnet2.AvailabilityZone
     # PostgreSQL RDS
-    DbInstanceArn:
-        Description: DB instance ARN
-        Value: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${DbInstance}
-        Export:
-            Name: !Sub ${AWS::StackName}:RdsDbInstanceArn
     DbInstanceEndpointAddress:
         Description: DB instance name endpoint address
         Value: !GetAtt DbInstance.Endpoint.Address
