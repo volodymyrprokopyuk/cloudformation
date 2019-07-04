@@ -24,7 +24,7 @@ def _validate_product_record(record):
 def _put_product_record_in_db(rds, record):
     with rds.cursor() as cursor:
         sql = """
-        SELECT put_product(
+        SELECT ingest.put_product(
             %(product_external_id)s,
             %(product_title)s,
             %(first_protection_ts)s,
@@ -49,10 +49,11 @@ if __name__ == "__main__":
         "Records": [
             {
                 "s3": {
-                    "bucket": {"name": "vlad-stack-firehose-delivery-stream"},
+                    "bucket": {"name": "infringement-ingest-dev-firehose-infringement-delivery"},
                     "object": {
-                        "key": "product/2019/06/27/12/ProductDeliveryStream"
-                        + "-1-2019-06-27-12-51-31-6622a92c-0c3c-47d1-8bb1-684a0742d6b1"
+                        "key": "product/2019/07/04/11/"
+                        + "infringement-ingest-DEV-ProductDeliveryStream"
+                        + "-1-2019-07-04-11-57-42-d55d2f5d-b0d4-4743-a84f-147dd201a670"
                     },
                 }
             }

@@ -21,7 +21,7 @@ def _validate_infringement_record(record):
 def _put_infringement_record_in_db(rds, record):
     with rds.cursor() as cursor:
         sql = """
-        SELECT put_infringement(
+        SELECT ingest.put_infringement(
             %(product_external_id)s,
             %(pirate_source_external_id)s,
             %(detection_ts)s,
@@ -45,10 +45,11 @@ if __name__ == "__main__":
         "Records": [
             {
                 "s3": {
-                    "bucket": {"name": "vlad-stack-firehose-delivery-stream"},
+                    "bucket": {"name": "infringement-ingest-dev-firehose-infringement-delivery"},
                     "object": {
-                        "key": "infringement/2019/06/27/12/InfringementDeliveryStream"
-                        + "-1-2019-06-27-12-51-31-35c3ce6b-f80c-42f0-8159-1811ccd161a4"
+                        "key": "infringement/2019/07/04/11/"
+                        + "infringement-ingest-DEV-InfringementDeliveryStream"
+                        + "-1-2019-07-04-11-57-47-585baca4-51ad-4b16-9c15-694592982e0e"
                     },
                 }
             }

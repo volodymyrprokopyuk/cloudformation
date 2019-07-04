@@ -16,5 +16,7 @@ readonly LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION=$(cat $LAMBDA_FUNCTION_DIR/PutInf
 # infringement-store configuration
 readonly DB_PORT=5432
 readonly DB_NAME=infringement
-readonly DB_USER=vld
-readonly DB_PASSWORD='Password1!'
+readonly DB_SUPER_USER=super
+readonly DB_SUPER_PASSWORD='Password1!'
+readonly DB_INGEST_USER=ingest
+readonly DB_INGEST_PASSWORD='Password1!'

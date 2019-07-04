@@ -46,8 +46,8 @@ function deploy_infringement_transform_stack {
         ParameterKey=RdsEndpointAddressExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:RdsEndpointAddress \
         ParameterKey=RdsEndpointPortExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:RdsEndpointPort \
         ParameterKey=DbName,ParameterValue=$DB_NAME \
-        ParameterKey=DbUser,ParameterValue=$DB_USER \
-        ParameterKey=DbPassword,ParameterValue=$DB_PASSWORD \
+        ParameterKey=DbUser,ParameterValue=$DB_INGEST_USER \
+        ParameterKey=DbPassword,ParameterValue=$DB_INGEST_PASSWORD \
         ParameterKey=S3FirehoseInfringementDeliveryBucketArnExportName,ParameterValue=$APPLICATION-ingest-$ENVIRONMENT:S3FirehoseInfringementDeliveryBucketArn \
         ParameterKey=S3LambdaPackageBucketName,ParameterValue=$S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME \
         ParameterKey=LambdaLogLevel,ParameterValue=$LAMBDA_LOG_LEVEL \
@@ -67,8 +67,8 @@ function deploy_infringement_store_stack {
         --parameters \
         ParameterKey=DbPort,ParameterValue=$DB_PORT \
         ParameterKey=DbName,ParameterValue=$DB_NAME \
-        ParameterKey=DbUser,ParameterValue=$DB_USER \
-        ParameterKey=DbPassword,ParameterValue=$DB_PASSWORD
+        ParameterKey=DbUser,ParameterValue=$DB_SUPER_USER \
+        ParameterKey=DbPassword,ParameterValue=$DB_SUPER_PASSWORD
 }
 
 function deploy_infringement_expose_stack {

@@ -11,8 +11,8 @@ export STACK_NAME=$APPLICATION-transform-$ENVIRONMENT
 export DB_HOST=localhost
 export DB_PORT
 export DB_NAME
-export DB_USER
-export DB_PASSWORD
+export DB_USER=$DB_INGEST_USER
+export DB_PASSWORD=$DB_INGEST_PASSWORD
 
 # Lambda configuration
 export LOG_LEVEL=$LAMBDA_LOG_LEVEL
