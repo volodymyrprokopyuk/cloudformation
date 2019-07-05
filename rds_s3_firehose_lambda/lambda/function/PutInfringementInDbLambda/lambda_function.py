@@ -18,7 +18,7 @@ def _validate_infringement_record(record):
     return errors
 
 
-def _put_infringement_record_in_db(rds, record):
+def _put_infringement_record_in_db(record, rds):
     with rds.cursor() as cursor:
         sql = """
         SELECT ingest.put_infringement(

@@ -104,6 +104,30 @@ CREATE TABLE ingest.infringement (
         CHECK (length(infringement_url) >= 3)
 );
 
+CREATE TYPE ingest.document_status_t AS
+    ENUM ('SUCCESS', 'FAILURE');
+
+CREATE TABLE ingest.document_statistics (
+    document_statistics_id serial NOT NULL,
+    document_name varchar(300) NOT NULL,
+    registration_ts timestamptz NOT NULL DEFAULT current_timestamp,
+    document_status ingest.document_status_t NOT NULL,
+    status_reason jsonb,
+    total_records integer NOT NULL DEFAULT 0,
+    success_records integer NOT NULL DEFAULT 0,
+    failure_records integer NOT NULL DEFAULT 0,
+    CONSTRAINT pk_document_statistics
+        PRIMARY KEY (document_statistics_id),
+    CONSTRAINT ck_document_statistics_status_reason
+        CHECK (
+            (document_status = 'SUCCESS' AND status_reason IS NULL)
+            OR
+            (document_status = 'FAILURE' AND status_reason IS NOT NULL)
+        ),
+    CONSTRAINT ck_document_statistics_total_records
+        CHECK (total_records = success_records + failure_records)
+);
+
 -- Functions
 CREATE OR REPLACE FUNCTION ingest.put_pirate_source(
     a_pirate_source_external_id varchar(20),
@@ -208,3 +232,31 @@ LANGUAGE sql AS $$
         infringement_status = excluded.infringement_status
     RETURNING infringement_id;
 $$;
+
+CREATE OR REPLACE FUNCTION ingest.put_document_statistics(
+    a_document_name varchar(300),
+    a_document_status ingest.document_status_t,
+    a_total_records integer,
+    a_success_records integer,
+    a_failure_records integer,
+    a_status_reason jsonb DEFAULT NULL
+)
+RETURNS integer
+LANGUAGE sql AS $$
+    INSERT INTO ingest.document_statistics(
+        document_name,
+        document_status,
+        total_records,
+        success_records,
+        failure_records,
+        status_reason
+    ) VALUES (
+        a_document_name,
+        a_document_status,
+        a_total_records,
+        a_success_records,
+        a_failure_records,
+        a_status_reason
+    )
+    RETURNING document_statistics_id;
+$$

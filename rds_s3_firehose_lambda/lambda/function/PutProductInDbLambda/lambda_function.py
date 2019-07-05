@@ -21,7 +21,7 @@ def _validate_product_record(record):
     return errors
 
 
-def _put_product_record_in_db(rds, record):
+def _put_product_record_in_db(record, rds):
     with rds.cursor() as cursor:
         sql = """
         SELECT ingest.put_product(
@@ -53,7 +53,7 @@ if __name__ == "__main__":
                         "name": "infringement-ingest-dev-firehose-infringement-delivery"
                     },
                     "object": {
-                        "key": "product/2019/07/05/08/infringement-ingest-DEV-ProductDeliveryStream-1-2019-07-05-08-20-48-4be1357a-39b9-4990-819a-02b1f3f4e88d"  # noqa: E501
+                        "key": "Xproduct/2019/07/05/08/infringement-ingest-DEV-ProductDeliveryStream-1-2019-07-05-08-20-48-4be1357a-39b9-4990-819a-02b1f3f4e88d"  # noqa: E501
                     },
                 }
             }
