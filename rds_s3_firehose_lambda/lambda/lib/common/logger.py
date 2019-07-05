@@ -115,7 +115,6 @@ def log_document_context(original):
 
 
 @with_logger("main")
-# @log_context
 def process_request(logger, request):
     """Process request"""
     logger.info("Processing request %s", request)

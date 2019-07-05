@@ -49,9 +49,7 @@ if __name__ == "__main__":
                         "name": "infringement-ingest-dev-firehose-infringement-delivery"
                     },
                     "object": {
-                        "key": "infringement/2019/07/04/11/"
-                        + "infringement-ingest-DEV-InfringementDeliveryStream"
-                        + "-1-2019-07-04-11-57-47-585baca4-51ad-4b16-9c15-694592982e0e"
+                        "key": "infringement/2019/07/05/08/infringement-ingest-DEV-InfringementDeliveryStream-1-2019-07-05-08-20-53-5c76ddb8-40ab-4312-95e0-c4286d629562"  # noqa: E501
                     },
                 }
             }

@@ -2,7 +2,7 @@
 import os
 import re
 import json
-from functools import partial
+from functools import partial, wraps
 import boto3
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -74,7 +74,9 @@ def _prepare_record(raw_record):
 
 
 @with_logger(LOGGER_NAME)
-def _process_record(logger, validate_record, put_record_in_db, raw_record, rds):
+def _process_record(
+    logger, validate_record, put_record_in_db, raw_record, document_statictics, rds
+):
     try:
         record = _prepare_record(raw_record)
         errors = validate_record(record)
@@ -83,30 +85,62 @@ def _process_record(logger, validate_record, put_record_in_db, raw_record, rds):
                 logger.info(record)
                 result = put_record_in_db(rds, record)
                 logger.info(result)
+                document_statictics["success_records"] += 1
             except Exception as error:
                 logger.error(f"Put record in database {record}: {error}")
+                document_statictics["failure_records"] += 1
                 rds.rollback()
         else:
             logger.error(f"Validate record {record}: {errors}")
+            document_statictics["failure_records"] += 1
     except Exception as error:
         logger.error(f"Prepare record {raw_record}: {error}")
+        document_statictics["failure_records"] += 1
+
+
+def track_document_statistics(original):
+    """Track document status and total, success, and failure record count"""
+
+    @wraps(original)
+    def decorated(logger, f1, document, *args, **kwargs):
+        document_statictics = {
+            "document_name": document["s3_object_key"],
+            "document_status": "SUCCESS",
+            "status_reason": None,
+            "total_records": 0,
+            "success_records": 0,
+            "failure_records": 0,
+        }
+        result = original(logger, f1, document, document_statictics, *args, **kwargs)
+        logger.debug(document_statictics)
+        return result
+
+    return decorated
 
 
 @with_logger(LOGGER_NAME)
 @log_document_context
-def _process_document(logger, process_record, document, s3, rds):
+@track_document_statistics
+def _process_document(logger, process_record, document, document_statictics, s3, rds):
     try:
         data_file = _download_document(document, s3)
         try:
             raw_records = _parse_document(data_file)
             for raw_record in raw_records:
-                process_record(raw_record, rds)
+                document_statictics["total_records"] += 1
+                process_record(raw_record, document_statictics, rds)
         except Exception as error:
-            logger.error(f"Parse document {data_file}: {error}")
+            error_message = f"Parse document {data_file}: {error}"
+            logger.error(error_message)
+            document_statictics["document_status"] = "FAILURE"
+            document_statictics["status_reason"] = {"error": error_message}
         finally:
             os.remove(data_file)
     except Exception as error:
-        logger.error(f"Downlaod document {document}: {error}")
+        error_message = f"Downlaod document {document}: {error}"
+        logger.error(error_message)
+        document_statictics["document_status"] = "FAILURE"
+        document_statictics["status_reason"] = {"error": error_message}
 
 
 def _process_request(process_document, request, s3, rds):
