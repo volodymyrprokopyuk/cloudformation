@@ -15,13 +15,13 @@ Parameters:
         Description: Database name
         Type: String
     DbUser:
-        Description: Database master user
+        Description: Database super user
         Type: String
     DbPassword:
-        Description: Database master user password
+        Description: Database super user password
         Type: String
     # S3
-    S3FirehoseInfringementDeliveryBucketArnExportName:
+    S3InfringementDeliveryBucketArnExportName:
         Description: Kinesis Firehose infringement delivey S3 bucket ARN export name
         Type: String
     S3LambdaPackageBucketName:
@@ -32,7 +32,7 @@ Parameters:
         Description: Lambda Python runtime
         Type: String
         Default: python3.7
-    LambdaTimeoutSec:
+    LambdaTimeoutSecs:
         Description: Lambda timeout
         Type: Number
         Default: 300
@@ -46,8 +46,12 @@ Parameters:
     LambdaPutInfringementInDbVersion:
         Description: PutInfringementInDb lambda version
         Type: String
+    CloudWatchPutDataInDbLambdaLogRetentionDays:
+        Description: CloudWatch PutDataInDb log retention period in days
+        Type: Number
+        Default: 7
 Resources:
-    # Lambda IAM Role
+    # PutDataInDb Lambda IAM Role
     IamPutDataInDbLambdaPolicy:
         Type: AWS::IAM::ManagedPolicy
         Properties:
@@ -66,11 +70,11 @@ Resources:
                           - s3:GetObject
                           - s3:ListBucketMultipartUploads
                       Resource:
-                          - Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
+                          - Fn::ImportValue: !Ref S3InfringementDeliveryBucketArnExportName
                           - !Sub
                               - ${S3FirehoseInfringementDeliveryBucketArn}/*
                               - S3FirehoseInfringementDeliveryBucketArn:
-                                  Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
+                                  Fn::ImportValue: !Ref S3InfringementDeliveryBucketArnExportName
                     # CloudWatch
                     - Effect: Allow
                       Action:
@@ -100,7 +104,7 @@ Resources:
             FunctionName: !Sub ${AWS::StackName}-PutProductInDbLambda
             Description: Put products into database
             Runtime: !Ref LambdaPythonRuntime
-            Timeout: !Ref LambdaTimeoutSec
+            Timeout: !Ref LambdaTimeoutSecs
             Environment:
                 Variables:
                     STACK_NAME: !Ref AWS::StackName
@@ -118,6 +122,12 @@ Resources:
                 S3Key: !Sub PutProductInDbLambda-${LambdaPutProductInDbVersion}.zip
             Handler: lambda_function.lambda_handler
             Role: !GetAtt IamPutDataInDbLambdaRole.Arn
+    CloudWatchPutProductInDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DependsOn: PutProductInDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${PutProductInDbLambda}
+            RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
     S3InvokePutProductInDbLambdaPermission:
         Type: AWS::Lambda::Permission
         Properties:
@@ -125,7 +135,7 @@ Resources:
             FunctionName: !GetAtt PutProductInDbLambda.Arn
             Principal: s3.amazonaws.com
             SourceArn:
-                Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
+                Fn::ImportValue: !Ref S3InfringementDeliveryBucketArnExportName
     # Infringement lambda
     PutInfringementInDbLambda:
         Type: AWS::Lambda::Function
@@ -133,7 +143,7 @@ Resources:
             FunctionName: !Sub ${AWS::StackName}-PutInfringementInDbLambda
             Description: Put infringements into database
             Runtime: !Ref LambdaPythonRuntime
-            Timeout: !Ref LambdaTimeoutSec
+            Timeout: !Ref LambdaTimeoutSecs
             Environment:
                 Variables:
                     STACK_NAME: !Ref AWS::StackName
@@ -151,6 +161,12 @@ Resources:
                 S3Key: !Sub PutInfringementInDbLambda-${LambdaPutInfringementInDbVersion}.zip
             Handler: lambda_function.lambda_handler
             Role: !GetAtt IamPutDataInDbLambdaRole.Arn
+    CloudWatchPutInfringementInDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DependsOn: PutInfringementInDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${PutInfringementInDbLambda}
+            RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
     S3InvokePutInfringementInDbLambdaPermission:
         Type: AWS::Lambda::Permission
         Properties:
@@ -158,7 +174,7 @@ Resources:
             FunctionName: !GetAtt PutInfringementInDbLambda.Arn
             Principal: s3.amazonaws.com
             SourceArn:
-                Fn::ImportValue: !Ref S3FirehoseInfringementDeliveryBucketArnExportName
+                Fn::ImportValue: !Ref S3InfringementDeliveryBucketArnExportName
 Outputs:
     # Product Lambda
     PutProductInDbLambdaName:

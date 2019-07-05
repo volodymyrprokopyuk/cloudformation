@@ -5,10 +5,10 @@ set -ex
 source ./bin/config.sh
 source ./bin/util.sh
 
-# Target localhost
+# Target localhost database instance
 if [[ $1 == -l ]]; then
     readonly DB_HOST=localhost
-# Get RDS endpoint address from CloudFormation Exports
+# Get RDS endpoint address from the CloudFormation Exports
 else
     readonly RDS_ENDPOINT_ADDRESS_EXPORT_NAME=$APPLICATION-store-$ENVIRONMENT:RdsEndpointAddress
     readonly DB_HOST=$(
@@ -37,7 +37,7 @@ readonly SQL_DROP_DB="DROP DATABASE IF EXISTS $DB_NAME;"
 readonly SQL_DROP_ROLE="DROP ROLE IF EXISTS ingest, ingest_role;"
 readonly SQL_CREATE_DB="CREATE DATABASE $DB_NAME WITH OWNER $DB_SUPER_USER;"
 
-# Drop and recreate the database schema. Sotre initial data in the database
+# Drop and recreate the database schema and roles. Sotre initial data in the database
 export PGPASSWORD=$DB_SUPER_PASSWORD
 psql -h $DB_HOST -p $DB_PORT -c "${SQL_DROP_DB}" postgres $DB_SUPER_USER
 psql -h $DB_HOST -p $DB_PORT -c "${SQL_DROP_ROLE}" postgres $DB_SUPER_USER

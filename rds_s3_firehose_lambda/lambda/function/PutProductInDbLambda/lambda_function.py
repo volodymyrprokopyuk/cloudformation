@@ -49,7 +49,9 @@ if __name__ == "__main__":
         "Records": [
             {
                 "s3": {
-                    "bucket": {"name": "infringement-ingest-dev-firehose-infringement-delivery"},
+                    "bucket": {
+                        "name": "infringement-ingest-dev-firehose-infringement-delivery"
+                    },
                     "object": {
                         "key": "product/2019/07/04/11/"
                         + "infringement-ingest-DEV-ProductDeliveryStream"

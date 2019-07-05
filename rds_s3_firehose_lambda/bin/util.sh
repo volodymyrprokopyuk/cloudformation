@@ -7,7 +7,7 @@ function create_s3_bucket_if_not_exists {
 }
 
 function get_cf_export_value {
-    local export_name=${1?ERROR: mandatory export name is not provided}
+    local export_name=${1?ERROR: mandatory CloudFormation export name is not provided}
     local jq_pattern=".Exports[] | select(.Name | contains(\"$export_name\")).Value"
 
     aws cloudformation list-exports | jq -r "${jq_pattern}"

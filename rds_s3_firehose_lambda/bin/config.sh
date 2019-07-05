@@ -2,10 +2,10 @@
 readonly APPLICATION=infringement
 readonly ENVIRONMENT=DEV
 
-# infirngement-intest configuration
-readonly S3_FIREHOSE_INFRINGEMENT_DELIVERY_BUCKET_SUFFIX=firehose-infringement-delivery
+# infirngement-ingest service configuration
+readonly S3_INFRINGEMENT_DELIVERY_BUCKET_SUFFIX=firehose-infringement-delivery
 
-# infringement-transform configuration
+# infringement-transform service configuration
 readonly S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME=infringement-transform-lambda-package
 readonly LAMBDA_LOG_LEVEL=DEBUG
 readonly LAMBDA_FUNCTION_DIR=$(pwd)/lambda/function
@@ -13,7 +13,7 @@ readonly LAMBDA_LIB_DIR=$(pwd)/lambda/lib
 readonly LAMBDA_PUT_PRODUCT_IN_DB_VERSION=$(cat $LAMBDA_FUNCTION_DIR/PutProductInDbLambda/version)
 readonly LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION=$(cat $LAMBDA_FUNCTION_DIR/PutInfringementInDbLambda/version)
 
-# infringement-store configuration
+# infringement-store service configuration
 readonly DB_PORT=5432
 readonly DB_NAME=infringement
 readonly DB_SUPER_USER=super

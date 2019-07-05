@@ -17,10 +17,10 @@
     <node id="n0">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="483.8901098901099" width="282.935546875" x="-32.91758241758248" y="306.0"/>
+          <y:Geometry height="479.27585927585926" width="282.935546875" x="-32.91758241758248" y="305.99999999999994"/>
           <y:Fill color="#99CC00" transparent="false"/>
           <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="158.318359375" x="62.30859375" y="15.18618801070727">infringement-ingest stack<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="158.318359375" x="62.30859375" y="15.041376459645676">infringement-ingest stack<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -257,14 +257,13 @@
     <node id="n14">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="83.84375" width="249.294921875" x="-17.38047304258248" y="687.46875"/>
+          <y:Geometry height="69.875" width="247.970703125" x="-16.05625429258248" y="694.453125"/>
           <y:Fill color="#00FF00" transparent="false"/>
           <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="73.84375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="218.6640625" x="15.3154296875" y="5.0">Export
+          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="59.875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="218.6640625" x="14.6533203125" y="5.0">Export
 - ProductDeliveryStreamName
 - InfringementDeliveryStreamName
-- S3FirehoseInfringementDelivery
-  BucketArn<y:LabelModel>
+- S3InfringementDeliveryBucketArn<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -662,7 +661,6 @@
       </data>
     </node>
     <node id="n37">
-      <data key="d5"/>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="55.90625" width="333.13671875" x="239.91386428369424" y="137.1875"/>
@@ -759,24 +757,13 @@
     <edge id="e7" source="n30" target="n0">
       <data key="d10">
         <y:GenericEdge configuration="com.yworks.edge.framed">
-          <y:Path sx="0.0" sy="0.0" tx="-1.283203125" ty="236.53846153846158"/>
+          <y:Path sx="0.0" sy="0.0" tx="-1.283203125" ty="234.28289210412117"/>
           <y:LineStyle color="#3366FF" type="line" width="3.0"/>
           <y:Arrows source="none" target="standard"/>
         </y:GenericEdge>
       </data>
     </edge>
-    <edge id="e8" source="n0" target="n1">
-      <data key="d9"/>
-      <data key="d10">
-        <y:GenericEdge configuration="com.yworks.edge.framed">
-          <y:Path sx="0.0" sy="-39.27317994505495" tx="0.0" ty="2.671875"/>
-          <y:LineStyle color="#3366FF" type="line" width="3.0"/>
-          <y:Arrows source="none" target="standard"/>
-        </y:GenericEdge>
-      </data>
-    </edge>
-    <edge id="e9" source="n28" target="n37">
-      <data key="d9"/>
+    <edge id="e8" source="n28" target="n37">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="3.6373430682369587" sy="0.0" tx="0.0" ty="0.0">
@@ -788,8 +775,7 @@
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e10" source="n29" target="n37">
-      <data key="d9"/>
+    <edge id="e9" source="n29" target="n37">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -799,6 +785,16 @@
           <y:Arrows source="none" target="standard"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e10" source="n0" target="n1">
+      <data key="d9"/>
+      <data key="d10">
+        <y:GenericEdge configuration="com.yworks.edge.framed">
+          <y:Path sx="0.0" sy="-35.637929637929574" tx="0.0" ty="4.0"/>
+          <y:LineStyle color="#3366FF" type="line" width="3.0"/>
+          <y:Arrows source="none" target="standard"/>
+        </y:GenericEdge>
       </data>
     </edge>
   </graph>

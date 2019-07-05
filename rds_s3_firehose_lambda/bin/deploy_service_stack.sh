@@ -11,7 +11,7 @@ Target:
     infringement-store - deploy PostgreSQL RDS
     infringement-ingest - deploy Kinesis Firehose delivery streams and S3 bucket
     infringement-transform - deploy data transformation Lambdas
-    infringement-expose - deploy API Gateway backed by endpoint Lambdas
+    infringement-expose - deploy API Gateway with Lambda endpoints
 Options:
     -c create stack, if -c is omitted then update stack
 EOF
@@ -25,12 +25,12 @@ function deploy_infringement_ingest_stack {
     local stack_name=$APPLICATION-$service-$ENVIRONMENT
     # Compose bucket name
     local lower_stack_name=$(echo $stack_name | tr '[:upper:]' '[:lower:]')
-    local bucket_name=$lower_stack_name-$S3_FIREHOSE_INFRINGEMENT_DELIVERY_BUCKET_SUFFIX
+    local bucket_name=$lower_stack_name-$S3_INFRINGEMENT_DELIVERY_BUCKET_SUFFIX
 
     aws cloudformation $stack_action --stack-name $stack_name \
         --template-body file://$stack_template \
         --parameters \
-        ParameterKey=S3FirehoseInfringementDeliveryBucketName,ParameterValue=$bucket_name \
+        ParameterKey=S3InfringementDeliveryBucketName,ParameterValue=$bucket_name \
         --capabilities CAPABILITY_NAMED_IAM
 }
 
@@ -48,7 +48,7 @@ function deploy_infringement_transform_stack {
         ParameterKey=DbName,ParameterValue=$DB_NAME \
         ParameterKey=DbUser,ParameterValue=$DB_INGEST_USER \
         ParameterKey=DbPassword,ParameterValue=$DB_INGEST_PASSWORD \
-        ParameterKey=S3FirehoseInfringementDeliveryBucketArnExportName,ParameterValue=$APPLICATION-ingest-$ENVIRONMENT:S3FirehoseInfringementDeliveryBucketArn \
+        ParameterKey=S3InfringementDeliveryBucketArnExportName,ParameterValue=$APPLICATION-ingest-$ENVIRONMENT:S3InfringementDeliveryBucketArn \
         ParameterKey=S3LambdaPackageBucketName,ParameterValue=$S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME \
         ParameterKey=LambdaLogLevel,ParameterValue=$LAMBDA_LOG_LEVEL \
         ParameterKey=LambdaPutProductInDbVersion,ParameterValue=$LAMBDA_PUT_PRODUCT_IN_DB_VERSION \

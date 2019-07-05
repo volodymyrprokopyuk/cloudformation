@@ -17,12 +17,12 @@ Parameters:
         Type: String
         Default: 10.1.20.0/24
     # RDS
-    DbInstanceClass:
-        Description: Database instance class
+    RdsInstanceClass:
+        Description: RDS instance class
         Type: String
         Default: db.t2.micro
-    DbMaxAllocatedStorage:
-        Description: Database maximal allocated storage
+    RdsMaxAllocatedStorage:
+        Description: RDS maximal allocated storage
         Type: String
         Default: 5
     DbEngine:
@@ -41,10 +41,10 @@ Parameters:
         Description: Database name
         Type: String
     DbUser:
-        Description: Database master user
+        Description: Database usper user
         Type: String
     DbPassword:
-        Description: Database master user password
+        Description: Database super user password
         Type: String
         NoEcho: true
 Resources:
@@ -85,7 +85,7 @@ Resources:
             Tags:
                 - Key: Name
                   Value: !Sub ${AWS::StackName}-RouteTable
-    Route1:
+    DefaultRoute:
         Type: AWS::EC2::Route
         Properties:
             RouteTableId: !Ref RouteTable
@@ -115,7 +115,7 @@ Resources:
             Tags:
                 - Key: Name
                   Value: !Sub ${AWS::StackName}-RouteTable2
-    Route2:
+    DefaultRoute2:
         Type: AWS::EC2::Route
         Properties:
             RouteTableId: !Ref RouteTable2
@@ -133,7 +133,7 @@ Resources:
             GroupName: !Sub ${AWS::StackName}-SecurityGroup
             GroupDescription: Security Group
             VpcId: !Ref Vpc
-    OutboundRule1:
+    DefaultOutboundRule:
         Type: AWS::EC2::SecurityGroupEgress
         Properties:
             GroupId: !Ref SecurityGroup
@@ -141,7 +141,7 @@ Resources:
             FromPort: 0
             ToPort: 65535
             CidrIp: 0.0.0.0/0
-    InboundRule1:
+    RdsInboundRule:
         Type: AWS::EC2::SecurityGroupIngress
         Properties:
             GroupId: !Ref SecurityGroup
@@ -162,8 +162,8 @@ Resources:
         Type: AWS::RDS::DBInstance
         DeletionPolicy: Delete
         Properties:
-            DBInstanceClass: !Ref DbInstanceClass
-            AllocatedStorage: !Ref DbMaxAllocatedStorage
+            DBInstanceClass: !Ref RdsInstanceClass
+            AllocatedStorage: !Ref RdsMaxAllocatedStorage
             Engine: !Ref DbEngine
             EngineVersion: !Ref DbEngineVersion
             Port: !Ref DbPort
@@ -190,23 +190,23 @@ Outputs:
         Description: Subnet ID
         Value: !Ref Subnet
     SubnetAvailabilityZone:
-        Description: Subnet AvailabilityZone
+        Description: Subnet availability zone
         Value: !GetAtt Subnet.AvailabilityZone
     # Subnet2
     Subnet2Id:
         Description: Subnet 2 ID
         Value: !Ref Subnet2
     Subnet2AvailabilityZone:
-        Description: Subnet 2 AvailabilityZone
+        Description: Subnet 2 availability zone
         Value: !GetAtt Subnet2.AvailabilityZone
     # PostgreSQL RDS
     DbInstanceEndpointAddress:
-        Description: DB instance name endpoint address
+        Description: Database instance endpoint address
         Value: !GetAtt DbInstance.Endpoint.Address
         Export:
             Name:  !Sub ${AWS::StackName}:RdsEndpointAddress
     DbInstanceEndpointPort:
-        Description: DB instance name endpoint port
+        Description: Database instance endpoint port
         Value: !GetAtt DbInstance.Endpoint.Port
         Export:
             Name:  !Sub ${AWS::StackName}:RdsEndpointPort
