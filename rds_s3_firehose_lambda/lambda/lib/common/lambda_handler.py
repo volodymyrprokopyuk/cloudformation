@@ -143,6 +143,22 @@ def track_document_statistics(original):
 
 
 @with_logger(LOGGER_NAME)
+def _move_document_to_processed(logger, document, s3):
+    try:
+        source_bucket = document["s3_bucket_name"]
+        source_key = document["s3_object_key"]
+        destination_bucket = source_bucket
+        destinaiton_key = f"PROCESSED/{source_key}"
+        copy_source = {"Bucket": source_bucket, "Key": source_key}
+        s3.copy_object(
+            Bucket=destination_bucket, CopySource=copy_source, Key=destinaiton_key
+        )
+        s3.delete_object(Bucket=source_bucket, Key=source_key)
+    except Exception as error:
+        logger.error(f"Move document to processed {document}: {error}")
+
+
+@with_logger(LOGGER_NAME)
 @log_document_context
 @track_document_statistics
 def _process_document(logger, process_record, document, document_statictics, s3, rds):
@@ -153,6 +169,7 @@ def _process_document(logger, process_record, document, document_statictics, s3,
             for raw_record in raw_records:
                 document_statictics["total_records"] += 1
                 process_record(raw_record, document_statictics, rds)
+            _move_document_to_processed(document, s3)
         except Exception as error:
             logger.error(f"Parse document {data_file}: {error}")
             document_statictics["document_status"] = "FAILURE"
