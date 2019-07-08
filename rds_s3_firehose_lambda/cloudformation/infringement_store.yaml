@@ -163,7 +163,7 @@ Resources:
                 - !Ref Subnet2
     DbInstance:
         Type: AWS::RDS::DBInstance
-        DeletionPolicy: Delete
+        DeletionPolicy: Delete # Snapshot
         Properties:
             DBInstanceClass: !Ref RdsInstanceClass
             AllocatedStorage: !Ref RdsMaxAllocatedStorage

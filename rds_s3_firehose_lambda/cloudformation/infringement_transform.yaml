@@ -128,6 +128,7 @@ Resources:
             Role: !GetAtt IamPutDataInDbLambdaRole.Arn
     CloudWatchPutProductInDbLambdaLogGroup:
         Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
         DependsOn: PutProductInDbLambda
         Properties:
             LogGroupName: !Sub /aws/lambda/${PutProductInDbLambda}
@@ -167,6 +168,7 @@ Resources:
             Role: !GetAtt IamPutDataInDbLambdaRole.Arn
     CloudWatchPutInfringementInDbLambdaLogGroup:
         Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
         DependsOn: PutInfringementInDbLambda
         Properties:
             LogGroupName: !Sub /aws/lambda/${PutInfringementInDbLambda}

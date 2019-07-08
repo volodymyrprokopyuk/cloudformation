@@ -24,12 +24,13 @@ Resources:
     # Kinesis Firehose delivery stream S3 bucket
     S3InfringementDeliveryBucket:
         Type: AWS::S3::Bucket
-        DeletionPolicy: Delete
+        DeletionPolicy: Delete # Retain
         Properties:
             BucketName: !Ref S3InfringementDeliveryBucketName
     # Kinesis Firehose CloudWatch log group
     CloudWatchInfringementDeliveryLogGroup:
         Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
         Properties:
             LogGroupName: !Sub /aws/kinesisfirehose/${AWS::StackName}-InfringementDeliveryLogGroup
             RetentionInDays: !Ref CloudWatchInfringementDeliveryLogRetentionDays
