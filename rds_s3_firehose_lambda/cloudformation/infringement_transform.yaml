@@ -49,7 +49,7 @@ Parameters:
     CloudWatchPutDataInDbLambdaLogRetentionDays:
         Description: CloudWatch PutDataInDb log retention period in days
         Type: Number
-        Default: 7
+        Default: 30
 Resources:
     # PutDataInDb Lambda IAM Role
     IamPutDataInDbLambdaPolicy:

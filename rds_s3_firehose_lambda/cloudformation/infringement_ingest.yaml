@@ -7,6 +7,10 @@ Parameters:
     S3InfringementDeliveryBucketName:
         Description: Kinesis Firehose infringement delivery S3 bucket name
         Type: String
+    S3InfringementDeliveryObjectExpirationInDays:
+        Description: Kinesis Firehose infringement delivery S3 object expiration in days
+        Type: Number
+        Default: 60
     # Kinesis Firehose
     FirehoseBufferSizeMbs:
         Description: Kinesis Firehose buffer size in MBs
@@ -19,7 +23,7 @@ Parameters:
     CloudWatchInfringementDeliveryLogRetentionDays:
         Description: Kinesis Firehose log retention period in days
         Type: Number
-        Default: 7
+        Default: 30
 Resources:
     # Kinesis Firehose delivery stream S3 bucket
     S3InfringementDeliveryBucket:
@@ -27,6 +31,11 @@ Resources:
         DeletionPolicy: Delete # Retain
         Properties:
             BucketName: !Ref S3InfringementDeliveryBucketName
+            LifecycleConfiguration:
+                Rules:
+                    - Id: InfringementDeliveryObjectExpiration
+                      Status: Enabled
+                      ExpirationInDays: !Ref S3InfringementDeliveryObjectExpirationInDays
     # Kinesis Firehose CloudWatch log group
     CloudWatchInfringementDeliveryLogGroup:
         Type: AWS::Logs::LogGroup
