@@ -75,33 +75,33 @@ def _prepare_record(raw_record):
 
 @with_logger(LOGGER_NAME)
 def _process_record(
-    logger, validate_record, put_record_in_db, raw_record, document_statictics, rds
+    logger, validate_record, put_record_in_db, raw_record, document_statistics, rds
 ):
     try:
         record = _prepare_record(raw_record)
         errors = validate_record(record)
         if not errors:
             try:
-                logger.info(record)
+                logger.debug(record)
                 result = put_record_in_db(record, rds)
-                logger.info(result)
-                document_statictics["success_records"] += 1
+                logger.debug(result)
+                document_statistics["success_records"] += 1
             except Exception as error:
                 logger.error(f"Put record in database {record}: {error}")
-                document_statictics["failure_records"] += 1
+                document_statistics["failure_records"] += 1
                 rds.rollback()
         else:
             logger.error(f"Validate record {record}: {errors}")
-            document_statictics["failure_records"] += 1
+            document_statistics["failure_records"] += 1
     except Exception as error:
         logger.error(f"Prepare record {raw_record}: {error}")
-        document_statictics["failure_records"] += 1
+        document_statistics["failure_records"] += 1
 
 
 def track_document_statistics(original):
     """Track document status and total, success, and failure record count"""
 
-    def _put_document_statistics_in_db(logger, document_statictics, rds):
+    def _put_document_statistics_in_db(logger, document_statistics, rds):
         try:
             with rds.cursor() as cursor:
                 sql = """
@@ -114,17 +114,17 @@ def track_document_statistics(original):
                     %(status_reason)s
                 ) document_statistics_id
                 """
-                cursor.execute(sql, document_statictics)
+                cursor.execute(sql, document_statistics)
                 rds.commit()
         except Exception as error:
             logger.error(
-                f"Put document statistics in database {document_statictics}: {error}"
+                f"Put document statistics in database {document_statistics}: {error}"
             )
             rds.rollback()
 
     @wraps(original)
     def decorated(logger, f1, document, s3, rds, *args, **kwargs):
-        document_statictics = {
+        document_statistics = {
             "document_name": document["s3_object_key"],
             "document_status": "SUCCESS",
             "status_reason": None,
@@ -133,10 +133,18 @@ def track_document_statistics(original):
             "failure_records": 0,
         }
         result = original(
-            logger, f1, document, document_statictics, s3, rds, *args, **kwargs
+            logger, f1, document, document_statistics, s3, rds, *args, **kwargs
         )
-        logger.debug(document_statictics)
-        _put_document_statistics_in_db(logger, document_statictics, rds)
+        if (
+            document_statistics["document_status"] == "SUCESS"
+            and document_statistics["failure_records"] == 0
+        ):
+            logger.info(document_statistics)
+        elif document_statistics["document_status"] == "SUCESS":
+            logger.warn(document_statistics)
+        else:
+            logger.error(document_statistics)
+        _put_document_statistics_in_db(logger, document_statistics, rds)
         return result
 
     return decorated
@@ -158,38 +166,42 @@ def _move_document_to_processed(logger, document, s3):
         logger.error(f"Move document to processed {document}: {error}")
 
 
+def _track_document_failure(
+    document_statistics, error_type, error_message, context_data
+):
+    document_statistics["document_status"] = "FAILURE"
+    status_reason = {
+        "error_type": error_type,
+        "error_message": error_message,
+        "context_data": context_data,
+    }
+    document_statistics["status_reason"] = json.dumps(status_reason)
+
+
 @with_logger(LOGGER_NAME)
 @log_document_context
 @track_document_statistics
-def _process_document(logger, process_record, document, document_statictics, s3, rds):
+def _process_document(logger, process_record, document, document_statistics, s3, rds):
     try:
         data_file = _download_document(document, s3)
         try:
             raw_records = _parse_document(data_file)
             for raw_record in raw_records:
-                document_statictics["total_records"] += 1
-                process_record(raw_record, document_statictics, rds)
+                document_statistics["total_records"] += 1
+                process_record(raw_record, document_statistics, rds)
             _move_document_to_processed(document, s3)
         except Exception as error:
             logger.error(f"Parse document {data_file}: {error}")
-            document_statictics["document_status"] = "FAILURE"
-            status_reason = {
-                "error_type": "Parse document error",
-                "error_message": f"{error}",
-                "context_data": f"{data_file}",
-            }
-            document_statictics["status_reason"] = json.dumps(status_reason)
+            _track_document_failure(
+                document_statistics, "Parse document error", str(error), data_file
+            )
         finally:
             os.remove(data_file)
     except Exception as error:
         logger.error(f"Downlaod document {document}: {error}")
-        document_statictics["document_status"] = "FAILURE"
-        status_reason = {
-            "error_type": "Downlaod document error",
-            "error_message": f"{error}",
-            "context_data": f"{document}",
-        }
-        document_statictics["status_reason"] = json.dumps(status_reason)
+        _track_document_failure(
+            document_statistics, "Downlaod document error", str(error), document
+        )
 
 
 def _process_request(process_document, request, s3, rds):
