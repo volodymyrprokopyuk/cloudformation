@@ -53,6 +53,7 @@ function deploy_infringement_transform_stack {
         ParameterKey=LambdaLogLevel,ParameterValue=$LAMBDA_LOG_LEVEL \
         ParameterKey=LambdaPutProductInDbVersion,ParameterValue=$LAMBDA_PUT_PRODUCT_IN_DB_VERSION \
         ParameterKey=LambdaPutInfringementInDbVersion,ParameterValue=$LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION \
+        ParameterKey=SnsInfringementImportAlarmNotificationEmail,ParameterValue=$SNS_INFRINGEMENT_IMPORT_ALARM_NOTIFICATION_EMAIL \
         --capabilities CAPABILITY_NAMED_IAM
 }
 

@@ -258,6 +258,7 @@ Resources:
             Namespace: !Ref AWS::StackName
             MetricName: ImportProductDocument.FailureCount
             Period: 60
+            Unit: Count
             Statistic: SampleCount
             ComparisonOperator: GreaterThanOrEqualToThreshold
             Threshold: 1.0

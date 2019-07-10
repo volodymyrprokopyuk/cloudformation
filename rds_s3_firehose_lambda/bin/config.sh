@@ -12,6 +12,7 @@ readonly LAMBDA_FUNCTION_DIR=$(pwd)/lambda/function
 readonly LAMBDA_LIB_DIR=$(pwd)/lambda/lib
 readonly LAMBDA_PUT_PRODUCT_IN_DB_VERSION=$(cat $LAMBDA_FUNCTION_DIR/PutProductInDbLambda/version)
 readonly LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION=$(cat $LAMBDA_FUNCTION_DIR/PutInfringementInDbLambda/version)
+readonly SNS_INFRINGEMENT_IMPORT_ALARM_NOTIFICATION_EMAIL=volodymyr.prokopyuk@nagra.com
 
 # infringement-store service configuration
 readonly DB_PORT=5432
