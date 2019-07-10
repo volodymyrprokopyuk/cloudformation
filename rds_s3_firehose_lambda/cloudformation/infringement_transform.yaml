@@ -155,7 +155,7 @@ Resources:
         Type: AWS::Logs::MetricFilter
         Properties:
             LogGroupName: !Ref CloudWatchPutProductInDbLambdaLogGroup
-            FilterPattern: "{$.level = WARN && $.message.document_status = FAILED_RECORDS_BELOW_THRESHOLD}"
+            FilterPattern: "{$.level = WARNING && $.message.metric_type = FAILED_RECORDS_BELOW_THRESHOLD}"
             MetricTransformations:
                 - MetricNamespace: !Ref AWS::StackName
                   MetricName: ImportProductDocument.WithFailedRecordsBelowThresholdCount
@@ -223,7 +223,7 @@ Resources:
         Type: AWS::Logs::MetricFilter
         Properties:
             LogGroupName: !Ref CloudWatchPutInfringementInDbLambdaLogGroup
-            FilterPattern: "{$.level = WARN && $.message.document_status = FAILED_RECORDS_BELOW_THRESHOLD}"
+            FilterPattern: "{$.level = WARNING && $.message.metric_type = FAILED_RECORDS_BELOW_THRESHOLD}"
             MetricTransformations:
                 - MetricNamespace: !Ref AWS::StackName
                   MetricName: ImportInfringementDocument.WithFailedRecordsBelowThresholdCount
