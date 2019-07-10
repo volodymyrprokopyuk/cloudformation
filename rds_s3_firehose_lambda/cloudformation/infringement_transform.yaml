@@ -50,6 +50,10 @@ Parameters:
         Description: CloudWatch PutDataInDb log retention period in days
         Type: Number
         Default: 30
+    # SNS
+    SnsInfringementImportAlarmNotificationEmail:
+        Description: Infringement import alarm notificaiton email
+        Type: String
 Resources:
     # PutDataInDb Lambda IAM Role
     IamPutDataInDbLambdaPolicy:
@@ -141,7 +145,7 @@ Resources:
         Properties:
             LogGroupName: !Sub /aws/lambda/${PutProductInDbLambda}
             RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
-    # Product lambda metric filters
+    # Product import metric filters
     CloudWatchImportProductDocumentSuccessCount:
         Type: AWS::Logs::MetricFilter
         Properties:
@@ -209,7 +213,7 @@ Resources:
         Properties:
             LogGroupName: !Sub /aws/lambda/${PutInfringementInDbLambda}
             RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
-    # Infringement lambda metric filters
+    # Infringement import metric filters
     CloudWatchImportInfringementDocumentSuccessCount:
         Type: AWS::Logs::MetricFilter
         Properties:
@@ -237,6 +241,44 @@ Resources:
                 - MetricNamespace: !Ref AWS::StackName
                   MetricName: ImportInfringementDocument.FailureCount
                   MetricValue: "1"
+    # SNS infringement import alarm notification topic
+    SnsInfringementImportAlarmNotificationTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+            TopicName: !Sub ${AWS::StackName}-InfringementImportAlarmNotification
+            Subscription:
+                - Protocol: email
+                  Endpoint: !Ref SnsInfringementImportAlarmNotificationEmail
+    # Import product failure alarm
+    CloudWatchImportProductDocumentFailureAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmName: !Sub ${AWS::StackName}-ImportProductDocumentFailureAlarm
+            AlarmDescription: Notify via email on failure of product document import
+            Namespace: !Ref AWS::StackName
+            MetricName: ImportProductDocument.FailureCount
+            Period: 60
+            Statistic: SampleCount
+            ComparisonOperator: GreaterThanOrEqualToThreshold
+            Threshold: 1.0
+            EvaluationPeriods: 1
+            AlarmActions:
+                - !Ref SnsInfringementImportAlarmNotificationTopic
+    # Import infringement failure alarm
+    CloudWatchImportInfringementDocumentFailureAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmName: !Sub ${AWS::StackName}-ImportInfringementDocumentFailureAlarm
+            AlarmDescription: Notify via email on failure of infringement document import
+            Namespace: !Ref AWS::StackName
+            MetricName: ImportInfringementDocument.FailureCount
+            Period: 60
+            Statistic: SampleCount
+            ComparisonOperator: GreaterThanOrEqualToThreshold
+            Threshold: 1.0
+            EvaluationPeriods: 1
+            AlarmActions:
+                - !Ref SnsInfringementImportAlarmNotificationTopic
 Outputs:
     # Product Lambda
     PutProductInDbLambdaName:
