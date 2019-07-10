@@ -126,13 +126,6 @@ Resources:
                 S3Key: !Sub PutProductInDbLambda-${LambdaPutProductInDbVersion}.zip
             Handler: lambda_function.lambda_handler
             Role: !GetAtt IamPutDataInDbLambdaRole.Arn
-    CloudWatchPutProductInDbLambdaLogGroup:
-        Type: AWS::Logs::LogGroup
-        DeletionPolicy: Delete # Retain
-        DependsOn: PutProductInDbLambda
-        Properties:
-            LogGroupName: !Sub /aws/lambda/${PutProductInDbLambda}
-            RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
     S3InvokePutProductInDbLambdaPermission:
         Type: AWS::Lambda::Permission
         Properties:
@@ -141,6 +134,41 @@ Resources:
             Principal: s3.amazonaws.com
             SourceArn:
                 Fn::ImportValue: !Ref S3InfringementDeliveryBucketArnExportName
+    CloudWatchPutProductInDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
+        DependsOn: PutProductInDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${PutProductInDbLambda}
+            RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
+    # Product lambda metric filters
+    CloudWatchImportProductDocumentSuccessCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchPutProductInDbLambdaLogGroup
+            FilterPattern: "{$.level = INFO && $.message.metric_type = IMPORT_SUCCESS}"
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: ImportProductDocument.SuccessCount
+                  MetricValue: "1"
+    CloudWatchImportProductDocumentWithFailedRecordsBelowThresholdCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchPutProductInDbLambdaLogGroup
+            FilterPattern: "{$.level = WARN && $.message.document_status = FAILED_RECORDS_BELOW_THRESHOLD}"
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: ImportProductDocument.WithFailedRecordsBelowThresholdCount
+                  MetricValue: "1"
+    CloudWatchImportProductDocumentFailureCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchPutProductInDbLambdaLogGroup
+            FilterPattern: "{$.level = ERROR && $.message.metric_type = IMPORT_FAILURE}"
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: ImportProductDocument.FailureCount
+                  MetricValue: "1"
     # Infringement lambda
     PutInfringementInDbLambda:
         Type: AWS::Lambda::Function
@@ -166,13 +194,6 @@ Resources:
                 S3Key: !Sub PutInfringementInDbLambda-${LambdaPutInfringementInDbVersion}.zip
             Handler: lambda_function.lambda_handler
             Role: !GetAtt IamPutDataInDbLambdaRole.Arn
-    CloudWatchPutInfringementInDbLambdaLogGroup:
-        Type: AWS::Logs::LogGroup
-        DeletionPolicy: Delete # Retain
-        DependsOn: PutInfringementInDbLambda
-        Properties:
-            LogGroupName: !Sub /aws/lambda/${PutInfringementInDbLambda}
-            RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
     S3InvokePutInfringementInDbLambdaPermission:
         Type: AWS::Lambda::Permission
         Properties:
@@ -181,6 +202,41 @@ Resources:
             Principal: s3.amazonaws.com
             SourceArn:
                 Fn::ImportValue: !Ref S3InfringementDeliveryBucketArnExportName
+    CloudWatchPutInfringementInDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
+        DependsOn: PutInfringementInDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${PutInfringementInDbLambda}
+            RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
+    # Infringement lambda metric filters
+    CloudWatchImportInfringementDocumentSuccessCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchPutInfringementInDbLambdaLogGroup
+            FilterPattern: "{$.level = INFO && $.message.metric_type = IMPORT_SUCCESS}"
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: ImportInfringementDocument.SuccessCount
+                  MetricValue: "1"
+    CloudWatchImportInfringementDocumentWithFailedRecordsBelowThresholdCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchPutInfringementInDbLambdaLogGroup
+            FilterPattern: "{$.level = WARN && $.message.document_status = FAILED_RECORDS_BELOW_THRESHOLD}"
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: ImportInfringementDocument.WithFailedRecordsBelowThresholdCount
+                  MetricValue: "1"
+    CloudWatchImportInfringementDocumentFailureCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchPutInfringementInDbLambdaLogGroup
+            FilterPattern: "{$.level = ERROR && $.message.metric_type = IMPORT_FAILURE}"
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: ImportInfringementDocument.FailureCount
+                  MetricValue: "1"
 Outputs:
     # Product Lambda
     PutProductInDbLambdaName:

@@ -22,7 +22,11 @@ readonly CLIENT_SCRIPT=$CLIENT_DIR/main.py
 readonly CLIENT_DATA=$CLIENT_DIR/data
 
 # Send product data to the corresponding Kinesis Firehose delivery stream
-python $CLIENT_SCRIPT -p $CLIENT_DATA/product.txt
+python $CLIENT_SCRIPT -p $CLIENT_DATA/product_success.txt
+python $CLIENT_SCRIPT -p $CLIENT_DATA/product_failed_records_below_threshold.txt
+python $CLIENT_SCRIPT -p $CLIENT_DATA/product_failure.txt
 sleep 5
 # Send infringement data to the corresponding Kinesis Firehose delivery stream
-python $CLIENT_SCRIPT -i $CLIENT_DATA/infringement.txt
+python $CLIENT_SCRIPT -i $CLIENT_DATA/infringement_success.txt
+python $CLIENT_SCRIPT -i $CLIENT_DATA/infringement_failed_records_below_threshold.txt
+python $CLIENT_SCRIPT -i $CLIENT_DATA/infringement_failure.txt

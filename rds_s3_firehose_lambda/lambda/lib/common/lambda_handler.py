@@ -10,6 +10,7 @@ from common.logger import with_logger, log_environment, log_document_context
 
 
 LOGGER_NAME = "main"
+DOCUMENT_IMPORT_FAILURE_THRESHOLD = 0.2
 
 
 def _validate_config(local_config):
@@ -98,56 +99,78 @@ def _process_record(
         document_statistics["failure_records"] += 1
 
 
-def track_document_statistics(original):
+def track_document_statistics(document_import_failure_threshold):
     """Track document status and total, success, and failure record count"""
 
-    def _put_document_statistics_in_db(logger, document_statistics, rds):
-        try:
-            with rds.cursor() as cursor:
-                sql = """
-                SELECT ingest.put_document_statistics(
-                    %(document_name)s,
-                    %(document_status)s,
-                    %(total_records)s,
-                    %(success_records)s,
-                    %(failure_records)s,
-                    %(status_reason)s
-                ) document_statistics_id
-                """
-                cursor.execute(sql, document_statistics)
-                rds.commit()
-        except Exception as error:
-            logger.error(
-                f"Put document statistics in database {document_statistics}: {error}"
-            )
-            rds.rollback()
+    def decorator(original):
+        def _put_document_statistics_in_db(logger, document_statistics, rds):
+            try:
+                with rds.cursor() as cursor:
+                    sql = """
+                    SELECT ingest.put_document_statistics(
+                        %(document_name)s,
+                        %(document_status)s,
+                        %(total_records)s,
+                        %(success_records)s,
+                        %(failure_records)s,
+                        %(status_reason)s
+                    ) document_statistics_id
+                    """
+                    cursor.execute(sql, document_statistics)
+                    rds.commit()
+            except Exception as error:
+                logger.error(
+                    f"Put document statistics in database {document_statistics}: {error}"  # noqa: E501
+                )
+                rds.rollback()
 
-    @wraps(original)
-    def decorated(logger, f1, document, s3, rds, *args, **kwargs):
-        document_statistics = {
-            "document_name": document["s3_object_key"],
-            "document_status": "SUCCESS",
-            "status_reason": None,
-            "total_records": 0,
-            "success_records": 0,
-            "failure_records": 0,
-        }
-        result = original(
-            logger, f1, document, document_statistics, s3, rds, *args, **kwargs
-        )
-        if (
-            document_statistics["document_status"] == "SUCESS"
-            and document_statistics["failure_records"] == 0
+        def _log_document_statistics(
+            logger, document_statistics, document_import_failure_threshold
         ):
-            logger.info(document_statistics)
-        elif document_statistics["document_status"] == "SUCESS":
-            logger.warn(document_statistics)
-        else:
-            logger.error(document_statistics)
-        _put_document_statistics_in_db(logger, document_statistics, rds)
-        return result
+            document_status = document_statistics["document_status"]
+            total_records = document_statistics["total_records"]
+            failure_records = document_statistics["failure_records"]
+            if total_records == 0:
+                document_statistics["metric_type"] = "EMPTY_DOCUMENT"
+                logger.warn(document_statistics)
+                return
+            failure_ratio = failure_records / total_records
+            if document_status == "SUCCESS" and failure_records == 0:
+                document_statistics["metric_type"] = "IMPORT_SUCCESS"
+                logger.info(document_statistics)
+            elif (
+                document_status == "SUCCESS"
+                and failure_ratio < document_import_failure_threshold
+            ):
+                document_statistics["metric_type"] = "FAILED_RECORDS_BELOW_THRESHOLD"
+                logger.warn(document_statistics)
+            else:
+                document_statistics["metric_type"] = "IMPORT_FAILURE"
+                logger.error(document_statistics)
 
-    return decorated
+        @wraps(original)
+        def decorated(logger, f1, document, s3, rds, *args, **kwargs):
+            document_statistics = {
+                "document_name": document["s3_object_key"],
+                "document_status": "SUCCESS",
+                "metric_type": "IMPORT_SUCCESS",
+                "status_reason": None,
+                "total_records": 0,
+                "success_records": 0,
+                "failure_records": 0,
+            }
+            result = original(
+                logger, f1, document, document_statistics, s3, rds, *args, **kwargs
+            )
+            _log_document_statistics(
+                logger, document_statistics, document_import_failure_threshold
+            )
+            _put_document_statistics_in_db(logger, document_statistics, rds)
+            return result
+
+        return decorated
+
+    return decorator
 
 
 @with_logger(LOGGER_NAME)
@@ -180,7 +203,7 @@ def _track_document_failure(
 
 @with_logger(LOGGER_NAME)
 @log_document_context
-@track_document_statistics
+@track_document_statistics(DOCUMENT_IMPORT_FAILURE_THRESHOLD)
 def _process_document(logger, process_record, document, document_statistics, s3, rds):
     try:
         data_file = _download_document(document, s3)

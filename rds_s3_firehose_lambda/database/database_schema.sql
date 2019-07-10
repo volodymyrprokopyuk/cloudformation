@@ -110,7 +110,8 @@ CREATE TYPE ingest.document_status_t AS
 CREATE TABLE ingest.document_statistics (
     document_statistics_id serial NOT NULL,
     document_name varchar(300) NOT NULL,
-    registration_ts timestamptz NOT NULL DEFAULT current_timestamp,
+    registration_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     document_status ingest.document_status_t NOT NULL,
     status_reason jsonb,
     total_records integer NOT NULL DEFAULT 0,
