@@ -55,7 +55,7 @@ function wait_for_cf_desired_stack_status {
     interval=${interval:=60}
     set -u
 
-    sleep $interval
+    sleep 5
     local stack_status=$(get_cf_stack_status $stack_name)
     if is_cf_stack_failed $stack_status; then
         return 1
@@ -74,7 +74,7 @@ function wait_for_cf_desired_stack_status {
         fi
         attempts=$(( $attempts - 1 ))
     done
-    echo "ERROR: timeout after $attempts attempts with $interval interwal when waiting for desired stack status: $stack_name" >&2
+    echo "ERROR: $stack_name is not in the desired status" >&2
     return 1
 }
 

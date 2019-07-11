@@ -5,7 +5,7 @@
 # Validate cloudformation/infirngement_store.yaml template
 ./bin/validate_cf_template.sh cloudformation/infringement_store.yaml
 # Deploy infirngement-store service stack
-./bin/deploy_service_stack.sh infringement-store
+./bin/deploy_application.sh infringement-store
 
 # Create database schema in RDS or in localhost [-l]
 ./bin/create_db_schema.sh [-l]
@@ -14,7 +14,7 @@
 # Validate cloudformation/infirngement_ingest.yaml template
 ./bin/validate_cf_template.sh cloudformation/infringement_ingest.yaml
 # Deploy infirngement-ingest service stack
-./bin/deploy_service_stack.sh infringement-ingest
+./bin/deploy_application.sh infringement-ingest
 
 # DEPLOY infringement-transform SERVICE STACK
 # Downlaod psycopg2 with statically linked libpg
@@ -30,7 +30,7 @@ cp -r psycopg2-3.7 lambda/lib/psycopg2
 # Validate cloudformation/infirngement_transform.yaml template
 ./bin/validate_cf_template.sh cloudformation/infringement_transform.yaml
 # Deploy infirngement-transform service stack
-./bin/deploy_service_stack.sh infringement-transform [-c]
+./bin/deploy_application.sh infringement-transform
 
 # UPDATE infringement-ingest SERVICE STACK
 # Update Kinesis Firehose infringement delivery S3 bucket to trigger transformation
