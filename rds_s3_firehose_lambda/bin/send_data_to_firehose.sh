@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-set -eux
-
 source ./bin/config.sh
 source ./bin/util.sh
+
+set $SETOPTS
 
 # Get Kinesis Firehose product delivery stream name
 readonly FIREHOSE_PRODUCT_DELIVERY_STREAM_EXPORT_NAME=$APPLICATION-ingest-$ENVIRONMENT:ProductDeliveryStreamName

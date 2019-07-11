@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-set -eux
-
 source ./bin/config.sh
 source ./bin/util.sh
+
+set $SETOPTS
 
 function delete_transform_lambda_package_bucket {
     local bucket_name=s3://$S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME

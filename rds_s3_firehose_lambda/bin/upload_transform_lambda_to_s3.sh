@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-set -eux
-
 source ./bin/config.sh
 source ./bin/util.sh
+
+set $SETOPTS
 
 readonly PYVENV=pyvenv
 

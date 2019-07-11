@@ -1,4 +1,6 @@
-set -eux
+readonly SETOPTS=-eux
+
+set $SETOPTS
 
 # Application and environment configuration
 readonly APPLICATION=infringement

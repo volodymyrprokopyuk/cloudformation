@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-set -eux
+source ./bin/config.sh
+
+set $SETOPTS
 
 USAGE="Usage: ./bin/validate_cf_template.sh <cf_template.yaml>"
 

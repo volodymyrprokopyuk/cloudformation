@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-set -eux
-
 source ./bin/config.sh
+
+set $SETOPTS
 
 # Application and envirnment configuration
 export STACK_NAME=$APPLICATION-transform-$ENVIRONMENT

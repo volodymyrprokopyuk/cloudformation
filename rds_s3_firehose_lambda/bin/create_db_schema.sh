@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-set -eux
-
 source ./bin/config.sh
 source ./bin/util.sh
+
+set $SETOPTS
 
 set +u
 # Target localhost database instance
@@ -48,5 +48,3 @@ psql -h $DB_HOST -p $DB_PORT -f $DB_SCHEMA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_
 psql -h $DB_HOST -p $DB_PORT -f $DB_DATA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
 psql -h $DB_HOST -p $DB_PORT -f $DB_USER_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
 rm -f $DB_USER_FILE
-# Open an interactive session with the database
-pgcli -h $DB_HOST -p $DB_PORT $DB_NAME $DB_SUPER_USER

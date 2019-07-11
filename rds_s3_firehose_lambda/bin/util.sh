@@ -1,4 +1,4 @@
-set -eux
+set $SETOPTS
 
 function create_s3_bucket_if_not_exists {
     local s3_bucket_name=${1?ERROR: mandatory S3 bucket name is not provided}

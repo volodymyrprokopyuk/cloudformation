@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-set -eux
-
 source ./bin/config.sh
+
+set $SETOPTS
 
 readonly LINE_LENGTH=88
 readonly PY_SOURCE="client/*.py lambda/lib/common/*.py lambda/function/*/*.py"
