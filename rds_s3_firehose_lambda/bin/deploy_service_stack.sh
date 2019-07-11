@@ -43,6 +43,7 @@ function deploy_infringement_transform_stack {
     aws cloudformation $stack_action --stack-name $stack_name \
         --template-body file://$stack_template \
         --parameters \
+        ParameterKey=EnvironmentType,ParameterValue=${ENVIRONMENT:0:4} \
         ParameterKey=RdsEndpointAddressExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:RdsEndpointAddress \
         ParameterKey=RdsEndpointPortExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:RdsEndpointPort \
         ParameterKey=DbName,ParameterValue=$DB_NAME \

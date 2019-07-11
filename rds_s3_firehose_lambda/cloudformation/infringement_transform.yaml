@@ -4,6 +4,10 @@ Description: >-
     Create Lambdas for transferring data from Kinesis Firehose delivery streams S3
     bucket to RDS
 Parameters:
+    # Environment
+    EnvironmentType:
+        Description: Type of environment FEAT, DEV, TEST, PROD
+        Type: String
     # RDS
     RdsEndpointAddressExportName:
         Description: RDS database endpoint address export name
@@ -54,6 +58,8 @@ Parameters:
     SnsInfringementImportAlarmNotificationEmail:
         Description: Infringement import alarm notificaiton email
         Type: String
+Conditions:
+    IsProduction: !Equals [!Ref EnvironmentType, PROD ]
 Resources:
     # PutDataInDb Lambda IAM Role
     IamPutDataInDbLambdaPolicy:
@@ -244,6 +250,7 @@ Resources:
     # SNS infringement import alarm notification topic
     SnsInfringementImportAlarmNotificationTopic:
         Type: AWS::SNS::Topic
+        Condition: IsProduction
         Properties:
             TopicName: !Sub ${AWS::StackName}-InfringementImportAlarmNotification
             Subscription:
@@ -252,6 +259,7 @@ Resources:
     # Import product failure alarm
     CloudWatchImportProductDocumentFailureAlarm:
         Type: AWS::CloudWatch::Alarm
+        Condition: IsProduction
         Properties:
             AlarmName: !Sub ${AWS::StackName}-ImportProductDocumentFailureAlarm
             AlarmDescription: Notify via email on failure of product document import
@@ -268,6 +276,7 @@ Resources:
     # Import infringement failure alarm
     CloudWatchImportInfringementDocumentFailureAlarm:
         Type: AWS::CloudWatch::Alarm
+        Condition: IsProduction
         Properties:
             AlarmName: !Sub ${AWS::StackName}-ImportInfringementDocumentFailureAlarm
             AlarmDescription: Notify via email on failure of infringement document import
