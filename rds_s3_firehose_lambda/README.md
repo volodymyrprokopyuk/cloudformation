@@ -4,8 +4,8 @@
 # DEPLOY infringement-store SERVICE STACK
 # Validate cloudformation/infirngement_store.yaml template
 ./bin/validate_cf_template.sh cloudformation/infringement_store.yaml
-# Deploy (create -c or update) infirngement-store service stack
-./bin/deploy_service_stack.sh infringement-store [-c]
+# Deploy infirngement-store service stack
+./bin/deploy_service_stack.sh infringement-store
 
 # Create database schema in RDS or in localhost [-l]
 ./bin/create_db_schema.sh [-l]
@@ -13,8 +13,8 @@
 # DEPLOY infringement-ingest SERVICE STACK
 # Validate cloudformation/infirngement_ingest.yaml template
 ./bin/validate_cf_template.sh cloudformation/infringement_ingest.yaml
-# Deploy (create -c or update) infirngement-ingest service stack
-./bin/deploy_service_stack.sh infringement-ingest [-c]
+# Deploy infirngement-ingest service stack
+./bin/deploy_service_stack.sh infringement-ingest
 
 # DEPLOY infringement-transform SERVICE STACK
 # Downlaod psycopg2 with statically linked libpg
@@ -29,7 +29,7 @@ cp -r psycopg2-3.7 lambda/lib/psycopg2
 
 # Validate cloudformation/infirngement_transform.yaml template
 ./bin/validate_cf_template.sh cloudformation/infringement_transform.yaml
-# Deploy (create -c or update) infirngement-transform service stack
+# Deploy infirngement-transform service stack
 ./bin/deploy_service_stack.sh infringement-transform [-c]
 
 # UPDATE infringement-ingest SERVICE STACK

@@ -1,3 +1,5 @@
+set -eux
+
 # Application and environment configuration
 readonly APPLICATION=infringement
 readonly ENVIRONMENT=DEV

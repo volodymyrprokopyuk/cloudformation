@@ -31,12 +31,12 @@ cat > $S3_BUCKET_LAMBDA_NOTIFICATION_JSON <<EOF
         {
             "Events": ["s3:ObjectCreated:*"],
             "Filter": {"Key": {"FilterRules": [{"Name": "prefix", "Value": "product/"}]}},
-            "LambdaFunctionArn": "$LAMBDA_PUT_PRODUCT_IN_DB_ARN"
+            "LambdaFunctionArn": "${LAMBDA_PUT_PRODUCT_IN_DB_ARN}"
         },
         {
             "Events": ["s3:ObjectCreated:*"],
             "Filter": {"Key": {"FilterRules": [{"Name": "prefix", "Value": "infringement/"}]}},
-            "LambdaFunctionArn": "$LAMBDA_PUT_INFRINGEMENT_IN_DB_ARN"
+            "LambdaFunctionArn": "${LAMBDA_PUT_INFRINGEMENT_IN_DB_ARN}"
         }
     ]
 }

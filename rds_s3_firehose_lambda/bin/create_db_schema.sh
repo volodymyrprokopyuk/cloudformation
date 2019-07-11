@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-set -ex
+set -eux
 
 source ./bin/config.sh
 source ./bin/util.sh
 
+set +u
 # Target localhost database instance
 if [[ $1 == -l ]]; then
     readonly DB_HOST=localhost
@@ -15,6 +16,7 @@ else
         get_cf_export_value $RDS_ENDPOINT_ADDRESS_EXPORT_NAME
     )
 fi
+set -u
 
 readonly DB_DIR=$(pwd)/database
 readonly DB_SCHEMA_FILE=$DB_DIR/database_schema.sql

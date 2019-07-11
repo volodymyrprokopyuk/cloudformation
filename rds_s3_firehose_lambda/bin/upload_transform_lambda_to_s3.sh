@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
+set -eux
 
 source ./bin/config.sh
 source ./bin/util.sh
@@ -17,11 +17,16 @@ function create_and_upload_lambda_archive_to_s3 {
     rm -rf $lambda_archive
     # Install lambda dependencies
     cd $lambda_dir
+    set +e
     deactivate
+    set -e
+    # rm -rf $PYVENV
     python -m venv $PYVENV
     source $PYVENV/bin/activate
     pip install -r requirements.txt
+    set +u
     deactivate
+    set -u
     # Create lambda archive
     # Add Python dependencies and exclude the psycopg2 with dynamically linked libpg
     cd $deps_dir
