@@ -23,7 +23,7 @@ readonly CF_DIR=$(pwd)/cloudformation
 function _decide_stack_action {
     local stack_name=${1?ERROR: mandatory stack name is not provided}
 
-    local stack_status=$(_get_stack_status $stack_name)
+    local stack_status=$(get_cf_stack_status $stack_name)
     local stack_action=""
     if cf_stack_does_not_exist $stack_status; then
         stack_action=create-stack

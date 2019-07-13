@@ -95,3 +95,36 @@ function delete_cf_stack {
         wait_for_cf_desired_stack_status $stack_name cf_stack_does_not_exist
     fi
 }
+
+function create_ssh_tunnel {
+    local local_port=${1?ERROR: mandatory local port is not provided}
+    local remote_host=${2?ERROR: mandatory remote host is not provided}
+    local remote_port=${3?ERROR: mandatory remote port is not provided}
+    local bastion_user=${4?ERROR: mandatory bastion user is not provided}
+    local bastion_host=${5?ERROR: mandatory bastion host is not provided}
+
+    ssh -A -f -N -L $local_port:$remote_host:$remote_port $bastion_user@$bastion_host
+}
+
+
+function destroy_ssh_tunnel {
+    local local_port=${1?ERROR: mandatory local port is not provided}
+    local remote_host=${2?ERROR: mandatory remote host is not provided}
+    local remote_port=${3?ERROR: mandatory remote port is not provided}
+    local bastion_user=${4?ERROR: mandatory bastion user is not provided}
+    local bastion_host=${5?ERROR: mandatory bastion host is not provided}
+
+    local ssh_tunnel_pattern="ssh.*$local_port:$remote_host:$remote_port $bastion_user@$bastion_host"
+    pkill -f "${ssh_tunnel_pattern}"
+}
+
+function is_ssh_tunnel_created {
+    local local_port=${1?ERROR: mandatory local port is not provided}
+    local remote_host=${2?ERROR: mandatory remote host is not provided}
+    local remote_port=${3?ERROR: mandatory remote port is not provided}
+    local bastion_user=${4?ERROR: mandatory bastion user is not provided}
+    local bastion_host=${5?ERROR: mandatory bastion host is not provided}
+
+    local ssh_tunnel_pattern="ssh.*$local_port:$remote_host:$remote_port $bastion_user@$bastion_host"
+    pgrep -f "${ssh_tunnel_pattern}"
+}

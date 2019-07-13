@@ -1,7 +1,9 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-    Create a VPC with two Subnets in different AvailabilityZoness and a PostgreSQL RDS
+    Create a VPC with two private subnets in different AvailabilityZoness and a
+    PostgreSQL RDS. Create a bastion host in a public subnet to access private RDS
+    instance through SSH tunelling
 Parameters:
     # VPC
     VpcCidrBlock:
@@ -9,16 +11,35 @@ Parameters:
         Type: String
         AllowedPattern: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}"
         Default: 10.1.0.0/16
-    SubnetCidrBlock:
-        Description: Subnet CIDR block
+    # Public and private Subnets
+    PublicSubnetCidrBlock:
+        Description: Public subnet CIDR block
         Type: String
         AllowedPattern: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}"
         Default: 10.1.10.0/24
-    Subnet2CidrBlock:
-        Description: Subnet 2 CIDR block
+    PrivateSubnetCidrBlock:
+        Description: Private subnet CIDR block
         Type: String
         AllowedPattern: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}"
         Default: 10.1.20.0/24
+    PrivateSubnet2CidrBlock:
+        Description: Private subnet 2 CIDR block
+        Type: String
+        AllowedPattern: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}"
+        Default: 10.1.30.0/24
+    # Bastion EC2
+    BastionImageId:
+        Description: Bastion EC2 image ID
+        Type: AWS::EC2::Image::Id
+        Default: ami-0cc293023f983ed53
+    BastionInstanceType:
+        Description: Bastion EC2 instance type
+        Type: String
+        Default: t2.nano
+    BastionKeyName:
+        Description: SSH key name to access Bastion EC2
+        Type: String
+        Default: vprokopy
     # RDS
     RdsInstanceClass:
         Description: RDS instance class
@@ -69,77 +90,143 @@ Resources:
         Properties:
             VpcId: !Ref Vpc
             InternetGatewayId: !Ref InternetGateway
-    # Subnet
-    Subnet:
+    # Public Subnet
+    PublicSubnet:
         Type: AWS::EC2::Subnet
         Properties:
             VpcId: !Ref Vpc
-            CidrBlock: !Ref SubnetCidrBlock
+            CidrBlock: !Ref PublicSubnetCidrBlock
             AvailabilityZone: !Select [0, !GetAZs ]
             MapPublicIpOnLaunch: true
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-Subnet
-    # RouteTable
-    RouteTable:
+                  Value: !Sub ${AWS::StackName}-PublicSubnet
+    # Public RouteTable
+    PublicRouteTable:
         Type: AWS::EC2::RouteTable
         Properties:
             VpcId: !Ref Vpc
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-RouteTable
-    DefaultRoute:
+                  Value: !Sub ${AWS::StackName}-PubcliRouteTable
+    PublicDefaultRoute:
         Type: AWS::EC2::Route
         Properties:
-            RouteTableId: !Ref RouteTable
+            RouteTableId: !Ref PublicRouteTable
             DestinationCidrBlock: 0.0.0.0/0
             GatewayId: !Ref InternetGateway
-    SubnetRouteTableAssociation:
+    PublicSubnetRouteTableAssociation:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
-            RouteTableId: !Ref RouteTable
-            SubnetId: !Ref Subnet
-    # Subnet 2
-    Subnet2:
+            RouteTableId: !Ref PublicRouteTable
+            SubnetId: !Ref PublicSubnet
+    # Bastion SecurityGroup
+    BastionSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: !Sub ${AWS::StackName}-BastionSecurityGroup
+            GroupDescription: Bastion SecurityGroup
+            VpcId: !Ref Vpc
+    BastionDefaultOutboundRule:
+        Type: AWS::EC2::SecurityGroupEgress
+        Properties:
+            GroupId: !Ref BastionSecurityGroup
+            IpProtocol: "-1"
+            FromPort: 0
+            ToPort: 65535
+            CidrIp: 0.0.0.0/0
+    BastionInboundRule:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            GroupId: !Ref BastionSecurityGroup
+            IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: 0.0.0.0/0
+    # Bastion EC2
+    BastionEc2:
+        Type: AWS::EC2::Instance
+        Properties:
+            ImageId: !Ref BastionImageId
+            InstanceType: !Ref BastionInstanceType
+            KeyName: !Ref BastionKeyName
+            SecurityGroupIds:
+                - !GetAtt BastionSecurityGroup.GroupId
+            SubnetId: !Ref PublicSubnet
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-BastionEc2
+    # Private subnet
+    PrivateSubnet:
         Type: AWS::EC2::Subnet
         Properties:
             VpcId: !Ref Vpc
-            CidrBlock: !Ref Subnet2CidrBlock
-            AvailabilityZone: !Select [1, !GetAZs ]
-            MapPublicIpOnLaunch: true
+            CidrBlock: !Ref PrivateSubnetCidrBlock
+            AvailabilityZone: !Select [0, !GetAZs ]
+            # MapPublicIpOnLaunch: true
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-Subnet2
-    # RouteTable 2
-    RouteTable2:
-        Type: AWS::EC2::RouteTable
+                  Value: !Sub ${AWS::StackName}-PrivateSubnet
+    # # RouteTable
+    # RouteTable:
+    #     Type: AWS::EC2::RouteTable
+    #     Properties:
+    #         VpcId: !Ref Vpc
+    #         Tags:
+    #             - Key: Name
+    #               Value: !Sub ${AWS::StackName}-RouteTable
+    # DefaultRoute:
+    #     Type: AWS::EC2::Route
+    #     Properties:
+    #         RouteTableId: !Ref RouteTable
+    #         DestinationCidrBlock: 0.0.0.0/0
+    #         GatewayId: !Ref InternetGateway
+    # SubnetRouteTableAssociation:
+    #     Type: AWS::EC2::SubnetRouteTableAssociation
+    #     Properties:
+    #         RouteTableId: !Ref RouteTable
+    #         SubnetId: !Ref Subnet
+    # Private Subnet 2
+    PrivateSubnet2:
+        Type: AWS::EC2::Subnet
         Properties:
             VpcId: !Ref Vpc
+            CidrBlock: !Ref PrivateSubnet2CidrBlock
+            AvailabilityZone: !Select [1, !GetAZs ]
+            # MapPublicIpOnLaunch: true
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-RouteTable2
-    DefaultRoute2:
-        Type: AWS::EC2::Route
-        Properties:
-            RouteTableId: !Ref RouteTable2
-            DestinationCidrBlock: 0.0.0.0/0
-            GatewayId: !Ref InternetGateway
-    Subnet2RouteTableAssociation:
-        Type: AWS::EC2::SubnetRouteTableAssociation
-        Properties:
-            RouteTableId: !Ref RouteTable2
-            SubnetId: !Ref Subnet2
-    # SecurityGroup
-    SecurityGroup:
+                  Value: !Sub ${AWS::StackName}-PrivateSubnet2
+    # # RouteTable 2
+    # RouteTable2:
+    #     Type: AWS::EC2::RouteTable
+    #     Properties:
+    #         VpcId: !Ref Vpc
+    #         Tags:
+    #             - Key: Name
+    #               Value: !Sub ${AWS::StackName}-RouteTable2
+    # DefaultRoute2:
+    #     Type: AWS::EC2::Route
+    #     Properties:
+    #         RouteTableId: !Ref RouteTable2
+    #         DestinationCidrBlock: 0.0.0.0/0
+    #         GatewayId: !Ref InternetGateway
+    # Subnet2RouteTableAssociation:
+    #     Type: AWS::EC2::SubnetRouteTableAssociation
+    #     Properties:
+    #         RouteTableId: !Ref RouteTable2
+    #         SubnetId: !Ref Subnet2
+    # RDS SecurityGroup
+    RdsSecurityGroup:
         Type: AWS::EC2::SecurityGroup
         Properties:
-            GroupName: !Sub ${AWS::StackName}-SecurityGroup
-            GroupDescription: Security Group
+            GroupName: !Sub ${AWS::StackName}-RdsSecurityGroup
+            GroupDescription: RDS SecurityGroup
             VpcId: !Ref Vpc
-    DefaultOutboundRule:
+    RdsDefaultOutboundRule:
         Type: AWS::EC2::SecurityGroupEgress
         Properties:
-            GroupId: !Ref SecurityGroup
+            GroupId: !Ref RdsSecurityGroup
             IpProtocol: "-1"
             FromPort: 0
             ToPort: 65535
@@ -147,11 +234,12 @@ Resources:
     RdsInboundRule:
         Type: AWS::EC2::SecurityGroupIngress
         Properties:
-            GroupId: !Ref SecurityGroup
+            GroupId: !Ref RdsSecurityGroup
             IpProtocol: tcp
             FromPort: !Ref DbPort
             ToPort: !Ref DbPort
-            CidrIp: 0.0.0.0/0
+            # CidrIp: 0.0.0.0/0
+            SourceSecurityGroupId: !Ref BastionSecurityGroup
     # PostgreSQL RDS
     DbSubnetGroup:
         Type: AWS::RDS::DBSubnetGroup
@@ -159,8 +247,8 @@ Resources:
             DBSubnetGroupName: !Sub ${AWS::StackName}-DbSubnetGroup
             DBSubnetGroupDescription: DB subnet group
             SubnetIds:
-                - !Ref Subnet
-                - !Ref Subnet2
+                - !Ref PrivateSubnet
+                - !Ref PrivateSubnet2
     DbInstance:
         Type: AWS::RDS::DBInstance
         DeletionPolicy: Delete # Snapshot
@@ -176,7 +264,7 @@ Resources:
             PubliclyAccessible: true
             DBSubnetGroupName: !Ref DbSubnetGroup
             VPCSecurityGroups:
-                - !Ref SecurityGroup
+                - !Ref RdsSecurityGroup
             Tags:
                 - Key: Name
                   Value: !Sub ${AWS::StackName}-Rds
@@ -188,20 +276,36 @@ Outputs:
     VpcCidrBlock:
         Description: VPC CIDR block
         Value: !GetAtt Vpc.CidrBlock
-    # Subnet
-    SubnetId:
-        Description: Subnet ID
-        Value: !Ref Subnet
-    SubnetAvailabilityZone:
-        Description: Subnet availability zone
-        Value: !GetAtt Subnet.AvailabilityZone
-    # Subnet2
-    Subnet2Id:
-        Description: Subnet 2 ID
-        Value: !Ref Subnet2
-    Subnet2AvailabilityZone:
-        Description: Subnet 2 availability zone
-        Value: !GetAtt Subnet2.AvailabilityZone
+    # Public Subnet
+    PublicSubnetId:
+        Description: Public Subnet ID
+        Value: !Ref PublicSubnet
+    # Bastion EC2
+    BastionEc2InstanceId:
+        Description: Bastion EC2 instance ID
+        Value: !Ref BastionEc2
+    BastionEc2PublicDnsName:
+        Description: Bastion EC2 bastion public DNS name
+        Value: !GetAtt BastionEc2.PublicDnsName
+    BastionEc2PublicIp:
+        Description: Bastion EC2 public IP
+        Value: !GetAtt BastionEc2.PublicIp
+        Export:
+            Name: !Sub ${AWS::StackName}:BastionEc2PublicIp
+    BastionEc2PrivateDnsName:
+        Description: Bastion EC2 private DNS name
+        Value: !GetAtt BastionEc2.PrivateDnsName
+    BastionEc2PrivateIp:
+        Description: Bastion EC2 private IP
+        Value: !GetAtt BastionEc2.PrivateIp
+    # Private Subnet
+    PrivateSubnetId:
+        Description: Private Subnet ID
+        Value: !Ref PrivateSubnet
+    # PrivateSubnet2
+    PrivateSubnet2Id:
+        Description: Private Subnet 2 ID
+        Value: !Ref PrivateSubnet2
     # PostgreSQL RDS
     DbInstanceEndpointAddress:
         Description: Database instance endpoint address

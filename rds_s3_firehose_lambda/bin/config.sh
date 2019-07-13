@@ -19,7 +19,9 @@ readonly LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION=$(cat $LAMBDA_FUNCTION_DIR/PutInf
 readonly SNS_INFRINGEMENT_IMPORT_ALARM_NOTIFICATION_EMAIL=volodymyr.prokopyuk@nagra.com
 
 # infringement-store service configuration
+readonly BASTION_USER=ec2-user
 readonly DB_PORT=5432
+readonly DB_LOCAL_PORT=15432
 readonly DB_NAME=infringement
 readonly DB_SUPER_USER=super
 readonly DB_SUPER_PASSWORD='Password1!'

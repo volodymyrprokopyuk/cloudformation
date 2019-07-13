@@ -5,18 +5,30 @@ source ./bin/util.sh
 
 set $SETOPTS
 
-set +u
-# Target localhost database instance
-if [[ $1 == -l ]]; then
-    readonly DB_HOST=localhost
-# Get RDS endpoint address from the CloudFormation Exports
-else
-    readonly RDS_ENDPOINT_ADDRESS_EXPORT_NAME=$APPLICATION-store-$ENVIRONMENT:RdsEndpointAddress
-    readonly DB_HOST=$(
-        get_cf_export_value $RDS_ENDPOINT_ADDRESS_EXPORT_NAME
-    )
+readonly USAGE="./bin/create_db_schema.sh [-l]"
+
+readonly DB_HOST=localhost
+
+if (( $# == 1 )) && [[ $1 != -l ]]; then
+    echo $USAGE >&2
+    exit 1
 fi
-set -u
+
+# Target localhost database instance
+if (( $# == 1 )) && [[ $1 == -l ]]; then
+    readonly DB_BOUND_PORT=$DB_PORT
+# Target RDS database instance
+else
+    readonly STACK_NAME=$APPLICATION-store-$ENVIRONMENT
+    readonly RDS_ENDPOINT_ADDRESS=$(get_cf_export_value $STACK_NAME:RdsEndpointAddress)
+    readonly BASTION_IP=$(get_cf_export_value $STACK_NAME:BastionEc2PublicIp)
+    # Create SSH tunnel to the RDS database instance
+    if ! is_ssh_tunnel_created \
+        $DB_LOCAL_PORT $RDS_ENDPOINT_ADDRESS $DB_PORT $BASTION_USER $BASTION_IP; then
+        create_ssh_tunnel $DB_LOCAL_PORT $RDS_ENDPOINT_ADDRESS $DB_PORT $BASTION_USER $BASTION_IP
+    fi
+    readonly DB_BOUND_PORT=$DB_LOCAL_PORT
+fi
 
 readonly DB_DIR=$(pwd)/database
 readonly DB_SCHEMA_FILE=$DB_DIR/database_schema.sql
@@ -41,10 +53,18 @@ readonly SQL_CREATE_DB="CREATE DATABASE $DB_NAME WITH OWNER $DB_SUPER_USER;"
 
 # Drop and recreate the database schema and roles. Sotre initial data in the database
 export PGPASSWORD=$DB_SUPER_PASSWORD
-psql -h $DB_HOST -p $DB_PORT -c "${SQL_DROP_DB}" postgres $DB_SUPER_USER
-psql -h $DB_HOST -p $DB_PORT -c "${SQL_DROP_ROLE}" postgres $DB_SUPER_USER
-psql -h $DB_HOST -p $DB_PORT -c "${SQL_CREATE_DB}" postgres $DB_SUPER_USER
-psql -h $DB_HOST -p $DB_PORT -f $DB_SCHEMA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
-psql -h $DB_HOST -p $DB_PORT -f $DB_DATA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
-psql -h $DB_HOST -p $DB_PORT -f $DB_USER_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
+psql -h $DB_HOST -p $DB_BOUND_PORT -c "${SQL_DROP_DB}" postgres $DB_SUPER_USER
+psql -h $DB_HOST -p $DB_BOUND_PORT -c "${SQL_DROP_ROLE}" postgres $DB_SUPER_USER
+psql -h $DB_HOST -p $DB_BOUND_PORT -c "${SQL_CREATE_DB}" postgres $DB_SUPER_USER
+psql -h $DB_HOST -p $DB_BOUND_PORT -f $DB_SCHEMA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
+psql -h $DB_HOST -p $DB_BOUND_PORT -f $DB_DATA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
+psql -h $DB_HOST -p $DB_BOUND_PORT -f $DB_USER_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
 rm -f $DB_USER_FILE
+
+# Destroy SSH tunnel to RDS database instance
+if (( $# == 0 )); then
+    if is_ssh_tunnel_created \
+        $DB_LOCAL_PORT $RDS_ENDPOINT_ADDRESS $DB_PORT $BASTION_USER $BASTION_IP; then
+        destroy_ssh_tunnel $DB_LOCAL_PORT $RDS_ENDPOINT_ADDRESS $DB_PORT $BASTION_USER $BASTION_IP
+    fi
+fi
