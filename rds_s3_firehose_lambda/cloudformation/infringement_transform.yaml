@@ -31,6 +31,16 @@ Parameters:
     S3LambdaPackageBucketName:
         Description: Lambda package S3 bucket name
         Type: String
+    # Lambda VPC (to access private RDS)
+    LambdaSecurityGroupIdExportName:
+        Description: Lambda SecurityGroup ID export name
+        Type: String
+    PrivateSubnetAIdExportName:
+        Description: Private Subnet A ID export name
+        Type: String
+    PrivateSubnetBIdExportName:
+        Description: Private Subnet B ID export name
+        Type: String
     # Lambda
     LambdaPythonRuntime:
         Description: Lambda Python runtime
@@ -89,6 +99,16 @@ Resources:
                               - ${S3FirehoseInfringementDeliveryBucketArn}/*
                               - S3FirehoseInfringementDeliveryBucketArn:
                                   Fn::ImportValue: !Ref S3InfringementDeliveryBucketArnExportName
+                    # Lambda VPC access with ENI Elastic Network Interface
+                    - Effect: Allow
+                      Action:
+                          - ec2:CreateNetworkInterface
+                          - ec2:DescribeNetworkInterfaces
+                          - ec2:DeleteNetworkInterface
+                          - ec2:DescribeSecurityGroups
+                          - ec2:DescribeSubnets
+                          - ec2:DescribeVpcs
+                      Resource: "*"
                     # CloudWatch
                     - Effect: Allow
                       Action:
@@ -135,6 +155,12 @@ Resources:
                 S3Bucket: !Ref S3LambdaPackageBucketName
                 S3Key: !Sub PutProductInDbLambda-${LambdaPutProductInDbVersion}.zip
             Handler: lambda_function.lambda_handler
+            VpcConfig:
+                SecurityGroupIds:
+                    - Fn::ImportValue: !Ref LambdaSecurityGroupIdExportName
+                SubnetIds:
+                    - Fn::ImportValue: !Ref PrivateSubnetAIdExportName
+                    - Fn::ImportValue: !Ref PrivateSubnetBIdExportName
             Role: !GetAtt IamPutDataInDbLambdaRole.Arn
     S3InvokePutProductInDbLambdaPermission:
         Type: AWS::Lambda::Permission
@@ -203,6 +229,12 @@ Resources:
                 S3Bucket: !Ref S3LambdaPackageBucketName
                 S3Key: !Sub PutInfringementInDbLambda-${LambdaPutInfringementInDbVersion}.zip
             Handler: lambda_function.lambda_handler
+            VpcConfig:
+                SecurityGroupIds:
+                    - Fn::ImportValue: !Ref LambdaSecurityGroupIdExportName
+                SubnetIds:
+                    - Fn::ImportValue: !Ref PrivateSubnetAIdExportName
+                    - Fn::ImportValue: !Ref PrivateSubnetBIdExportName
             Role: !GetAtt IamPutDataInDbLambdaRole.Arn
     S3InvokePutInfringementInDbLambdaPermission:
         Type: AWS::Lambda::Permission

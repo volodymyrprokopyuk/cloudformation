@@ -11,6 +11,7 @@ from common.logger import with_logger, log_environment, log_document_context
 
 LOGGER_NAME = "main"
 DOCUMENT_IMPORT_FAILURE_THRESHOLD = 0.2
+DB_CONNECT_TIMEOUT=30
 
 
 def _validate_config(local_config):
@@ -251,6 +252,7 @@ def _lambda_handler(logger, process_request, local_config, event, context):
                         "user": local_config["db_user"],
                         "password": local_config["db_password"],
                         "cursor_factory": RealDictCursor,
+                        "connect_timeout": DB_CONNECT_TIMEOUT,
                     }
                     rds = psycopg2.connect(**rds_config)
                     local_config["rds"] = rds

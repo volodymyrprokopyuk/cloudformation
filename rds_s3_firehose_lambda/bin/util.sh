@@ -40,7 +40,8 @@ function is_cf_stack_create_update_complete {
     set +u
     local stack_status=$1
     set -u
-    [[ $stack_status == CREATE_COMPLETE || $stack_status == UPDATE_COMPLETE ]]
+    [[ $stack_status == CREATE_COMPLETE || $stack_status == UPDATE_COMPLETE \
+        || $stack_status == UPDATE_ROLLBACK_COMPLETE ]]
 }
 
 function wait_for_cf_desired_stack_status {

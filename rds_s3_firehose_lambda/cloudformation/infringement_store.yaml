@@ -12,17 +12,17 @@ Parameters:
         AllowedPattern: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}"
         Default: 10.1.0.0/16
     # Public and private Subnets
-    PublicSubnetCidrBlock:
+    PublicSubnetACidrBlock:
         Description: Public subnet CIDR block
         Type: String
         AllowedPattern: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}"
         Default: 10.1.10.0/24
-    PrivateSubnetCidrBlock:
+    PrivateSubnetACidrBlock:
         Description: Private subnet CIDR block
         Type: String
         AllowedPattern: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}"
         Default: 10.1.20.0/24
-    PrivateSubnet2CidrBlock:
+    PrivateSubnetBCidrBlock:
         Description: Private subnet 2 CIDR block
         Type: String
         AllowedPattern: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}"
@@ -85,41 +85,129 @@ Resources:
     # InternetGateway
     InternetGateway:
         Type: AWS::EC2::InternetGateway
+        Properties:
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-InternetGateway
     GatewayAttachment:
         Type: AWS::EC2::VPCGatewayAttachment
         Properties:
             VpcId: !Ref Vpc
             InternetGatewayId: !Ref InternetGateway
-    # Public Subnet
-    PublicSubnet:
+    # Private Subnet A NatGateway
+    PrivateSubnetANatGatewayElasticIpAddress:
+        Type: AWS::EC2::EIP
+        Properties:
+            Domain: vpc
+    PrivateSubnetANatGateway:
+        Type: AWS::EC2::NatGateway
+        Properties:
+            AllocationId: !GetAtt PrivateSubnetANatGatewayElasticIpAddress.AllocationId
+            SubnetId: !Ref PublicSubnetA
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-PrivateSubnetANatGateway
+    # Private Subnet B NatGateway
+    PrivateSubnetBNatGatewayElasticIpAddress:
+        Type: AWS::EC2::EIP
+        Properties:
+            Domain: vpc
+    PrivateSubnetBNatGateway:
+        Type: AWS::EC2::NatGateway
+        Properties:
+            AllocationId: !GetAtt PrivateSubnetBNatGatewayElasticIpAddress.AllocationId
+            SubnetId: !Ref PublicSubnetA
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-PrivateSubnetBNatGateway
+    # Public Subnet A
+    PublicSubnetA:
         Type: AWS::EC2::Subnet
         Properties:
             VpcId: !Ref Vpc
-            CidrBlock: !Ref PublicSubnetCidrBlock
+            CidrBlock: !Ref PublicSubnetACidrBlock
             AvailabilityZone: !Select [0, !GetAZs ]
             MapPublicIpOnLaunch: true
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-PublicSubnet
-    # Public RouteTable
-    PublicRouteTable:
+                  Value: !Sub ${AWS::StackName}-PublicSubnetA
+    # Public Subnet A RouteTable
+    PublicSubnetARouteTable:
         Type: AWS::EC2::RouteTable
         Properties:
             VpcId: !Ref Vpc
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-PubcliRouteTable
-    PublicDefaultRoute:
+                  Value: !Sub ${AWS::StackName}-PublicSubnetARouteTable
+    PublicSubnetADefaultRoute:
         Type: AWS::EC2::Route
         Properties:
-            RouteTableId: !Ref PublicRouteTable
+            RouteTableId: !Ref PublicSubnetARouteTable
             DestinationCidrBlock: 0.0.0.0/0
             GatewayId: !Ref InternetGateway
-    PublicSubnetRouteTableAssociation:
+    PublicSubnetARouteTableAssociation:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
-            RouteTableId: !Ref PublicRouteTable
-            SubnetId: !Ref PublicSubnet
+            RouteTableId: !Ref PublicSubnetARouteTable
+            SubnetId: !Ref PublicSubnetA
+    # Private Subnet A
+    PrivateSubnetA:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: !Ref PrivateSubnetACidrBlock
+            AvailabilityZone: !Select [0, !GetAZs ]
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-PrivateSubnetA
+    # Private Subnet A RouteTable
+    PrivateSubnetARouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-PrivateSubnetARouteTable
+    PrivateSubnetADefaultRoute:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PrivateSubnetARouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId: !Ref PrivateSubnetANatGateway
+    PrivateSubnetARouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PrivateSubnetARouteTable
+            SubnetId: !Ref PrivateSubnetA
+    # Private Subnet B
+    PrivateSubnetB:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc
+            CidrBlock: !Ref PrivateSubnetBCidrBlock
+            AvailabilityZone: !Select [1, !GetAZs ]
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-PrivateSubnetB
+    # Private Subnet B RouteTable
+    PrivateSubnetBRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+                - Key: Name
+                  Value: !Sub ${AWS::StackName}-PrivateSubnetBRouteTable
+    PrivateSubnetBDefaultRoute:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PrivateSubnetBRouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId: !Ref PrivateSubnetBNatGateway
+    PrivateSubnetBRouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PrivateSubnetBRouteTable
+            SubnetId: !Ref PrivateSubnetB
     # Bastion SecurityGroup
     BastionSecurityGroup:
         Type: AWS::EC2::SecurityGroup
@@ -152,70 +240,25 @@ Resources:
             KeyName: !Ref BastionKeyName
             SecurityGroupIds:
                 - !GetAtt BastionSecurityGroup.GroupId
-            SubnetId: !Ref PublicSubnet
+            SubnetId: !Ref PublicSubnetA
             Tags:
                 - Key: Name
                   Value: !Sub ${AWS::StackName}-BastionEc2
-    # Private subnet
-    PrivateSubnet:
-        Type: AWS::EC2::Subnet
+    # Lambda SecurityGroup
+    LambdaSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
         Properties:
+            GroupName: !Sub ${AWS::StackName}-LambdaSecurityGroup
+            GroupDescription: Transform Lambda SecurityGroup
             VpcId: !Ref Vpc
-            CidrBlock: !Ref PrivateSubnetCidrBlock
-            AvailabilityZone: !Select [0, !GetAZs ]
-            # MapPublicIpOnLaunch: true
-            Tags:
-                - Key: Name
-                  Value: !Sub ${AWS::StackName}-PrivateSubnet
-    # # RouteTable
-    # RouteTable:
-    #     Type: AWS::EC2::RouteTable
-    #     Properties:
-    #         VpcId: !Ref Vpc
-    #         Tags:
-    #             - Key: Name
-    #               Value: !Sub ${AWS::StackName}-RouteTable
-    # DefaultRoute:
-    #     Type: AWS::EC2::Route
-    #     Properties:
-    #         RouteTableId: !Ref RouteTable
-    #         DestinationCidrBlock: 0.0.0.0/0
-    #         GatewayId: !Ref InternetGateway
-    # SubnetRouteTableAssociation:
-    #     Type: AWS::EC2::SubnetRouteTableAssociation
-    #     Properties:
-    #         RouteTableId: !Ref RouteTable
-    #         SubnetId: !Ref Subnet
-    # Private Subnet 2
-    PrivateSubnet2:
-        Type: AWS::EC2::Subnet
+    LambdaDefaultOutboundRule:
+        Type: AWS::EC2::SecurityGroupEgress
         Properties:
-            VpcId: !Ref Vpc
-            CidrBlock: !Ref PrivateSubnet2CidrBlock
-            AvailabilityZone: !Select [1, !GetAZs ]
-            # MapPublicIpOnLaunch: true
-            Tags:
-                - Key: Name
-                  Value: !Sub ${AWS::StackName}-PrivateSubnet2
-    # # RouteTable 2
-    # RouteTable2:
-    #     Type: AWS::EC2::RouteTable
-    #     Properties:
-    #         VpcId: !Ref Vpc
-    #         Tags:
-    #             - Key: Name
-    #               Value: !Sub ${AWS::StackName}-RouteTable2
-    # DefaultRoute2:
-    #     Type: AWS::EC2::Route
-    #     Properties:
-    #         RouteTableId: !Ref RouteTable2
-    #         DestinationCidrBlock: 0.0.0.0/0
-    #         GatewayId: !Ref InternetGateway
-    # Subnet2RouteTableAssociation:
-    #     Type: AWS::EC2::SubnetRouteTableAssociation
-    #     Properties:
-    #         RouteTableId: !Ref RouteTable2
-    #         SubnetId: !Ref Subnet2
+            GroupId: !Ref LambdaSecurityGroup
+            IpProtocol: "-1"
+            FromPort: 0
+            ToPort: 65535
+            CidrIp: 0.0.0.0/0
     # RDS SecurityGroup
     RdsSecurityGroup:
         Type: AWS::EC2::SecurityGroup
@@ -231,15 +274,22 @@ Resources:
             FromPort: 0
             ToPort: 65535
             CidrIp: 0.0.0.0/0
-    RdsInboundRule:
+    RdsBastionInboundRule:
         Type: AWS::EC2::SecurityGroupIngress
         Properties:
             GroupId: !Ref RdsSecurityGroup
             IpProtocol: tcp
             FromPort: !Ref DbPort
             ToPort: !Ref DbPort
-            # CidrIp: 0.0.0.0/0
             SourceSecurityGroupId: !Ref BastionSecurityGroup
+    RdsLambdaInboundRule:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            GroupId: !Ref RdsSecurityGroup
+            IpProtocol: tcp
+            FromPort: !Ref DbPort
+            ToPort: !Ref DbPort
+            SourceSecurityGroupId: !Ref LambdaSecurityGroup
     # PostgreSQL RDS
     DbSubnetGroup:
         Type: AWS::RDS::DBSubnetGroup
@@ -247,8 +297,8 @@ Resources:
             DBSubnetGroupName: !Sub ${AWS::StackName}-DbSubnetGroup
             DBSubnetGroupDescription: DB subnet group
             SubnetIds:
-                - !Ref PrivateSubnet
-                - !Ref PrivateSubnet2
+                - !Ref PrivateSubnetA
+                - !Ref PrivateSubnetB
     DbInstance:
         Type: AWS::RDS::DBInstance
         DeletionPolicy: Delete # Snapshot
@@ -277,9 +327,21 @@ Outputs:
         Description: VPC CIDR block
         Value: !GetAtt Vpc.CidrBlock
     # Public Subnet
-    PublicSubnetId:
-        Description: Public Subnet ID
-        Value: !Ref PublicSubnet
+    PublicSubnetAId:
+        Description: Public Subnet A ID
+        Value: !Ref PublicSubnetA
+    # Private Subnet A
+    PrivateSubnetAId:
+        Description: Private Subnet ID
+        Value: !Ref PrivateSubnetA
+        Export:
+            Name: !Sub ${AWS::StackName}:PrivateSubnetAId
+    # PrivateSubnet B
+    PrivateSubnetBId:
+        Description: Private Subnet B ID
+        Value: !Ref PrivateSubnetB
+        Export:
+            Name: !Sub ${AWS::StackName}:PrivateSubnetBId
     # Bastion EC2
     BastionEc2InstanceId:
         Description: Bastion EC2 instance ID
@@ -298,20 +360,18 @@ Outputs:
     BastionEc2PrivateIp:
         Description: Bastion EC2 private IP
         Value: !GetAtt BastionEc2.PrivateIp
-    # Private Subnet
-    PrivateSubnetId:
-        Description: Private Subnet ID
-        Value: !Ref PrivateSubnet
-    # PrivateSubnet2
-    PrivateSubnet2Id:
-        Description: Private Subnet 2 ID
-        Value: !Ref PrivateSubnet2
+    # Lambda SecurityGroup
+    LambdaSecurityGroupId:
+        Description: Lambda SecurityGroup ID
+        Value: !GetAtt LambdaSecurityGroup.GroupId
+        Export:
+            Name: !Sub ${AWS::StackName}:LambdaSecurityGroupId
     # PostgreSQL RDS
     DbInstanceEndpointAddress:
         Description: Database instance endpoint address
         Value: !GetAtt DbInstance.Endpoint.Address
         Export:
-            Name:  !Sub ${AWS::StackName}:RdsEndpointAddress
+            Name: !Sub ${AWS::StackName}:RdsEndpointAddress
     DbInstanceEndpointPort:
         Description: Database instance endpoint port
         Value: !GetAtt DbInstance.Endpoint.Port
