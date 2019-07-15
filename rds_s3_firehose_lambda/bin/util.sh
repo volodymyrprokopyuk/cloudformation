@@ -104,7 +104,8 @@ function create_ssh_tunnel {
     local bastion_user=${4?ERROR: mandatory bastion user is not provided}
     local bastion_host=${5?ERROR: mandatory bastion host is not provided}
 
-    ssh -A -f -N -L $local_port:$remote_host:$remote_port $bastion_user@$bastion_host
+    # ssh -A -f -N -L $local_port:$remote_host:$remote_port $bastion_user@$bastion_host
+    ssh -A -f -N -L $local_port:$remote_host:$remote_port -J 85.184.254.193 $bastion_user@$bastion_host
 }
 
 

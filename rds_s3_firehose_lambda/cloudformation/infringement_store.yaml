@@ -94,32 +94,19 @@ Resources:
         Properties:
             VpcId: !Ref Vpc
             InternetGatewayId: !Ref InternetGateway
-    # Private Subnet A NatGateway
-    PrivateSubnetANatGatewayElasticIpAddress:
+    # NatGateway
+    NatGatewayElasticIpAddress:
         Type: AWS::EC2::EIP
         Properties:
             Domain: vpc
-    PrivateSubnetANatGateway:
+    NatGateway:
         Type: AWS::EC2::NatGateway
         Properties:
-            AllocationId: !GetAtt PrivateSubnetANatGatewayElasticIpAddress.AllocationId
+            AllocationId: !GetAtt NatGatewayElasticIpAddress.AllocationId
             SubnetId: !Ref PublicSubnetA
             Tags:
                 - Key: Name
-                  Value: !Sub ${AWS::StackName}-PrivateSubnetANatGateway
-    # Private Subnet B NatGateway
-    PrivateSubnetBNatGatewayElasticIpAddress:
-        Type: AWS::EC2::EIP
-        Properties:
-            Domain: vpc
-    PrivateSubnetBNatGateway:
-        Type: AWS::EC2::NatGateway
-        Properties:
-            AllocationId: !GetAtt PrivateSubnetBNatGatewayElasticIpAddress.AllocationId
-            SubnetId: !Ref PublicSubnetA
-            Tags:
-                - Key: Name
-                  Value: !Sub ${AWS::StackName}-PrivateSubnetBNatGateway
+                  Value: !Sub ${AWS::StackName}-NatGateway
     # Public Subnet A
     PublicSubnetA:
         Type: AWS::EC2::Subnet
@@ -173,7 +160,7 @@ Resources:
         Properties:
             RouteTableId: !Ref PrivateSubnetARouteTable
             DestinationCidrBlock: 0.0.0.0/0
-            NatGatewayId: !Ref PrivateSubnetANatGateway
+            NatGatewayId: !Ref NatGateway
     PrivateSubnetARouteTableAssociation:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
@@ -202,7 +189,7 @@ Resources:
         Properties:
             RouteTableId: !Ref PrivateSubnetBRouteTable
             DestinationCidrBlock: 0.0.0.0/0
-            NatGatewayId: !Ref PrivateSubnetBNatGateway
+            NatGatewayId: !Ref NatGateway
     PrivateSubnetBRouteTableAssociation:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
