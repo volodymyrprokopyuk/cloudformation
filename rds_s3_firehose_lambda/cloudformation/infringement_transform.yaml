@@ -175,7 +175,7 @@ Resources:
         DeletionPolicy: Delete # Retain
         DependsOn: PutProductInDbLambda
         Properties:
-            LogGroupName: !Sub /aws/lambda/${PutProductInDbLambda}
+            LogGroupName: !Sub /aws/lambda/${AWS::StackName}-${PutProductInDbLambda}
             RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
     # Product import metric filters
     CloudWatchImportProductDocumentSuccessCount:
@@ -249,7 +249,7 @@ Resources:
         DeletionPolicy: Delete # Retain
         DependsOn: PutInfringementInDbLambda
         Properties:
-            LogGroupName: !Sub /aws/lambda/${PutInfringementInDbLambda}
+            LogGroupName: !Sub /aws/lambda/${AWS::StackName}-${PutInfringementInDbLambda}
             RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
     # Infringement import metric filters
     CloudWatchImportInfringementDocumentSuccessCount:
