@@ -5,6 +5,7 @@ set $SETOPTS
 # Application and environment configuration
 readonly APPLICATION=infringement
 readonly ENVIRONMENT=DEV
+readonly PYVENV=pyvenv
 
 # infirngement-ingest service configuration
 readonly S3_INFRINGEMENT_DELIVERY_BUCKET_SUFFIX=firehose-infringement-delivery

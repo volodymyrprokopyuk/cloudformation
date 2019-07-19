@@ -5,8 +5,6 @@ source ./bin/util.sh
 
 set $SETOPTS
 
-readonly PYVENV=pyvenv
-
 function create_and_upload_lambda_archive_to_s3 {
     local lambda_name=${1?ERROR: mandatory lambda name is not provided}
     local lambda_dir=$LAMBDA_FUNCTION_DIR/$lambda_name

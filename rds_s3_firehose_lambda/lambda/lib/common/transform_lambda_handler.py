@@ -6,12 +6,13 @@ from functools import partial, wraps
 import boto3
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from common.transform_config import get_config
 from common.logger import with_logger, log_environment, log_document_context
 
 
 LOGGER_NAME = "main"
 DOCUMENT_IMPORT_FAILURE_THRESHOLD = 0.2
-DB_CONNECT_TIMEOUT=30
+DB_CONNECT_TIMEOUT = 30
 
 
 def _validate_config(local_config):
@@ -24,9 +25,9 @@ def _validate_config(local_config):
     return errors
 
 
-def _prepare_request(event):
+def _parse_request(event):
     request = {}
-    # Prepare S3 objects from the event with S3 bucket name and S3 object key
+    # Parse S3 objects from the event with S3 bucket name and S3 object key
     if event.get("Records"):
         request["documents"] = []
         for record in event["Records"]:
@@ -45,12 +46,14 @@ def _validate_request(request):
     errors = []
     # Validate S3 objects with S3 bucket name and S3 object key
     attributes = ["s3_bucket_name", "s3_object_key"]
+    documents = request.get("documents")
+    if not documents:
+        errors.append("mandatory docuemnts are not provided")
+        return errors
     for document in request["documents"]:
         for attribute in attributes:
             if not document.get(attribute):
-                errors.append(
-                    f"Document {document}: mandatory {attribute} is not provided"
-                )
+                errors.append(f"mandatory {attribute} is not provided")
     return errors
 
 
@@ -59,7 +62,7 @@ def _download_document(document, s3):
     # Download data file to the /tmp directory
     # as in AWS Lambda environment only the /tmp directlry is wirtable
     data_file = f"/tmp/{data_file}"
-    s3.download_file(document["s3_bucket_name"], document["s3_object_key"], data_file)
+    res = s3.download_file(document["s3_bucket_name"], document["s3_object_key"], data_file)
     return data_file
 
 
@@ -67,10 +70,11 @@ def _parse_document(data_file):
     with open(data_file, "r") as opened_file:
         raw_data = opened_file.read()
         raw_records = raw_data.strip().split("\n")
+        raw_records = list(filter(len, raw_records))
         return raw_records
 
 
-def _prepare_record(raw_record):
+def _parse_record(raw_record):
     record = json.loads(raw_record)
     return record
 
@@ -80,7 +84,7 @@ def _process_record(
     logger, validate_record, put_record_in_db, raw_record, document_statistics, rds
 ):
     try:
-        record = _prepare_record(raw_record)
+        record = _parse_record(raw_record)
         errors = validate_record(record)
         if not errors:
             try:
@@ -96,7 +100,7 @@ def _process_record(
             logger.error(f"Validate record {record}: {errors}")
             document_statistics["failure_records"] += 1
     except Exception as error:
-        logger.error(f"Prepare record {raw_record}: {error}")
+        logger.error(f"Parse record {raw_record}: {error}")
         document_statistics["failure_records"] += 1
 
 
@@ -210,6 +214,8 @@ def _process_document(logger, process_record, document, document_statistics, s3,
         data_file = _download_document(document, s3)
         try:
             raw_records = _parse_document(data_file)
+            if not raw_records:
+                logger.warn("Empty document")
             for raw_record in raw_records:
                 document_statistics["total_records"] += 1
                 process_record(raw_record, document_statistics, rds)
@@ -220,11 +226,12 @@ def _process_document(logger, process_record, document, document_statistics, s3,
                 document_statistics, "Parse document error", str(error), data_file
             )
         finally:
-            os.remove(data_file)
+            if os.path.exists(data_file):
+                os.remove(data_file)
     except Exception as error:
-        logger.error(f"Downlaod document {document}: {error}")
+        logger.error(f"Download document {document}: {error}")
         _track_document_failure(
-            document_statistics, "Downlaod document error", str(error), document
+            document_statistics, "Download document error", str(error), document
         )
 
 
@@ -235,10 +242,11 @@ def _process_request(process_document, request, s3, rds):
 
 @with_logger(LOGGER_NAME)
 @log_environment
-def _lambda_handler(logger, process_request, local_config, event, context):
+def _lambda_handler(logger, process_request, event, context):
+    local_config = get_config()
     errors = _validate_config(local_config)
     if not errors:
-        request = _prepare_request(event)
+        request = _parse_request(event)
         errors = _validate_request(request)
         if not errors:
             try:
@@ -270,10 +278,10 @@ def _lambda_handler(logger, process_request, local_config, event, context):
         logger.critical(f"Validate configuration {local_config}: {errors}")
 
 
-def create_lambda_handler(validate_record, put_record_in_db, local_config):
+def create_lambda_handler(validate_record, put_record_in_db):
     """Create labmda handler for provided specific functions and configuration"""
     process_record = partial(_process_record, validate_record, put_record_in_db)
     process_document = partial(_process_document, process_record)
     process_request = partial(_process_request, process_document)
-    lambda_handler = partial(_lambda_handler, process_request, local_config)
+    lambda_handler = partial(_lambda_handler, process_request)
     return lambda_handler

@@ -1,0 +1,7 @@
+[run]
+omit =
+    pyvenv/*
+    test/*
+    */common/__init__.py
+    */common/logger.py
+    */common/transform_config.py

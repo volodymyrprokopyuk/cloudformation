@@ -1,6 +1,5 @@
 """Put product into database lambda"""
-from config import get_config
-from common.lambda_handler import create_lambda_handler
+from common.transform_lambda_handler import create_lambda_handler
 
 
 def _validate_product_record(record):
@@ -40,23 +39,9 @@ def _put_product_record_in_db(record, rds):
 
 
 lambda_handler = create_lambda_handler(
-    _validate_product_record, _put_product_record_in_db, get_config()
+    _validate_product_record, _put_product_record_in_db
 )
 
 
-if __name__ == "__main__":
-    test_event = {
-        "Records": [
-            {
-                "s3": {
-                    "bucket": {
-                        "name": "infringement-ingest-dev-firehose-infringement-delivery"
-                    },
-                    "object": {
-                        "key": "product/2019/07/09/11/infringement-ingest-DEV-ProductDeliveryStream-1-2019-07-09-11-41-34-907f1f9d-5e19-44f1-9865-68f15971d803"  # noqa: E501
-                    },
-                }
-            }
-        ]
-    }
-    lambda_handler(test_event, None)
+# if __name__ == "__main__":
+#     lambda_handler({}, None)
