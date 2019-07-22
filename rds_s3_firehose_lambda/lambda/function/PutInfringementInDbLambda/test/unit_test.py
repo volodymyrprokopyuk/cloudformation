@@ -23,7 +23,7 @@ def db_config(monkeypatch):
 @fixture
 def invalid_records_above_threshold_event():
     event = create_transform_event(
-        "bucket_name", "product_invalid_records_above_threshold.txt"
+        "bucket_name", "infringement_invalid_records_above_threshold.txt"
     )
     return event
 
@@ -31,18 +31,18 @@ def invalid_records_above_threshold_event():
 @fixture
 def invalid_records_below_threshold_event():
     event = create_transform_event(
-        "bucket_name", "product_invalid_records_below_threshold.txt"
+        "bucket_name", "infringement_invalid_records_below_threshold.txt"
     )
     return event
 
 
 @fixture
 def success_event():
-    event = create_transform_event("bucket_name", "product_success.txt")
+    event = create_transform_event("bucket_name", "infringement_success.txt")
     return event
 
 
-# Transform Product lambda test
+# Transform Infringement lambda test
 @patch("os.remove")
 @patch("psycopg2.connect")
 @patch("boto3.client")

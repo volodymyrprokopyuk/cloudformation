@@ -1,6 +1,5 @@
 """Put infirngement into database lambda"""
-from config import get_config
-from common.lambda_handler import create_lambda_handler
+from common.transform_lambda_handler import create_lambda_handler
 
 
 def _validate_infringement_record(record):
@@ -36,23 +35,9 @@ def _put_infringement_record_in_db(record, rds):
 
 
 lambda_handler = create_lambda_handler(
-    _validate_infringement_record, _put_infringement_record_in_db, get_config()
+    _validate_infringement_record, _put_infringement_record_in_db
 )
 
 
-if __name__ == "__main__":
-    test_event = {
-        "Records": [
-            {
-                "s3": {
-                    "bucket": {
-                        "name": "infringement-ingest-dev-firehose-infringement-delivery"
-                    },
-                    "object": {
-                        "key": "infringement/2019/07/09/11/infringement-ingest-DEV-InfringementDeliveryStream-1-2019-07-09-11-41-39-5cc396a2-e3be-47f4-824c-355d05e3b4ec"  # noqa: E501
-                    },
-                }
-            }
-        ]
-    }
-    lambda_handler(test_event, None)
+# if __name__ == "__main__":
+#     lambda_handler({}, None)

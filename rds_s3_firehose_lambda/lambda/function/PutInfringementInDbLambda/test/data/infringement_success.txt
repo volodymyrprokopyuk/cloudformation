@@ -1,0 +1,2 @@
+{"product_external_id": "PROD001", "pirate_source_external_id": "PSRC001", "detection_ts": "2019-06-21 16:07:13+0200", "infringement_url": "https://www.pirate1.com/movies/1", "infringement_status": "ACTIVE"}
+{"product_external_id": "PROD002", "pirate_source_external_id": "PSRC002", "detection_ts": "2019-06-22 17:08:14+0200", "infringement_url": "https://www.pirate1.com/movies/2", "infringement_status": "TAKEN_DOWN"}
