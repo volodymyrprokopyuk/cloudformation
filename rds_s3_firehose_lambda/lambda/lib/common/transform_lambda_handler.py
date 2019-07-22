@@ -62,7 +62,7 @@ def _download_document(document, s3):
     # Download data file to the /tmp directory
     # as in AWS Lambda environment only the /tmp directlry is wirtable
     data_file = f"/tmp/{data_file}"
-    res = s3.download_file(document["s3_bucket_name"], document["s3_object_key"], data_file)
+    s3.download_file(document["s3_bucket_name"], document["s3_object_key"], data_file)
     return data_file
 
 
@@ -80,6 +80,7 @@ def _parse_record(raw_record):
 
 
 @with_logger(LOGGER_NAME)
+# pylint: disable=too-many-arguments
 def _process_record(
     logger, validate_record, put_record_in_db, raw_record, document_statistics, rds
 ):
@@ -125,7 +126,8 @@ def track_document_statistics(document_import_failure_threshold):
                     rds.commit()
             except Exception as error:
                 logger.error(
-                    f"Put document statistics in database {document_statistics}: {error}"  # noqa: E501
+                    "Put document statistics in database"
+                    + f" {document_statistics}: {error}"
                 )
                 rds.rollback()
 
@@ -209,6 +211,7 @@ def _track_document_failure(
 @with_logger(LOGGER_NAME)
 @log_document_context
 @track_document_statistics(DOCUMENT_IMPORT_FAILURE_THRESHOLD)
+# pylint: disable=too-many-arguments
 def _process_document(logger, process_record, document, document_statistics, s3, rds):
     try:
         data_file = _download_document(document, s3)
@@ -242,6 +245,7 @@ def _process_request(process_document, request, s3, rds):
 
 @with_logger(LOGGER_NAME)
 @log_environment
+# pylint: disable=unused-argument
 def _lambda_handler(logger, process_request, event, context):
     local_config = get_config()
     errors = _validate_config(local_config)

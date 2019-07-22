@@ -6,12 +6,12 @@ import json
 from functools import wraps
 
 
-class JsonFormatter:
+class JsonFormatter:  # pylint: disable=too-few-public-methods
     """Convert a LogRecord to JSON"""
 
     OPTIONAL_JSON_ATTRIBUTES = ["stack", "version", "document"]
 
-    def format(self, log_record):
+    def format(self, log_record):  # pylint: disable=no-self-use
         """Convert a LogRecord to JSON"""
         json_log_record = {}
         # Timestamp in UTC
