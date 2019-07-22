@@ -2,12 +2,12 @@ from unittest.mock import patch, MagicMock
 from pytest import fixture
 from lambda_function import lambda_handler
 
-# Util
+# Test util
 def _all_in(messages, log):
     return all([message in log for message in messages])
 
 
-# Configuration fixtures
+# Configuration fixture
 @fixture
 def invalid_db_config(monkeypatch):
     config = {
@@ -35,7 +35,7 @@ def db_config(monkeypatch):
     return config
 
 
-# Event fixtures
+# Event fixture
 def _create_event(bucket_name, object_key):
     event = {
         "Records": [
@@ -101,6 +101,7 @@ def event():
     return event
 
 
+# Common lambda test
 def test_validate_empty_configuration_error(caplog):
     lambda_handler({}, None)
     assert _all_in(["CRITICAL", "Validate configuration"], caplog.text)
@@ -189,31 +190,6 @@ def test_parse_invalid_document_error(
 @patch("os.remove")
 @patch("psycopg2.connect")
 @patch("boto3.client")
-def test_validate_record_error(
-    boto3_client_mock, pg_connect_mock, os_remove_mock,
-    db_config, invalid_records_above_threshold_event, caplog,
-):
-    lambda_handler(invalid_records_above_threshold_event, None)
-    assert _all_in(["ERROR", "Validate record"], caplog.text)
-
-
-@patch("os.remove")
-@patch("psycopg2.connect")
-@patch("boto3.client")
-def test_put_product_in_db_error(
-    boto3_client_mock, pg_connect_mock, os_remove_mock,
-    db_config, success_event, caplog,
-):
-    rds_mock = MagicMock()
-    rds_mock.cursor.side_effect = Exception("Put product in database error")
-    pg_connect_mock.return_value = rds_mock
-    lambda_handler(success_event, None)
-    assert _all_in(["ERROR", "Put record in database"], caplog.text)
-
-
-@patch("os.remove")
-@patch("psycopg2.connect")
-@patch("boto3.client")
 def test_move_document_to_processed_error(
     boto3_client_mock, pg_connect_mock, os_remove_mock,
     db_config, success_event, caplog,
@@ -236,6 +212,32 @@ def test_process_request_with_invalid_records_below_threshold_success(
 ):
     lambda_handler(invalid_records_below_threshold_event, None)
     assert _all_in(["WARNING", "SUCCESS", "FAILED_RECORDS_BELOW_THRESHOLD"], caplog.text)
+
+
+# Product lambda tests
+@patch("os.remove")
+@patch("psycopg2.connect")
+@patch("boto3.client")
+def test_validate_record_error(
+    boto3_client_mock, pg_connect_mock, os_remove_mock,
+    db_config, invalid_records_above_threshold_event, caplog,
+):
+    lambda_handler(invalid_records_above_threshold_event, None)
+    assert _all_in(["ERROR", "Validate record"], caplog.text)
+
+
+@patch("os.remove")
+@patch("psycopg2.connect")
+@patch("boto3.client")
+def test_put_product_in_db_error(
+    boto3_client_mock, pg_connect_mock, os_remove_mock,
+    db_config, success_event, caplog,
+):
+    rds_mock = MagicMock()
+    rds_mock.cursor.side_effect = Exception("Put product in database error")
+    pg_connect_mock.return_value = rds_mock
+    lambda_handler(success_event, None)
+    assert _all_in(["ERROR", "Put record in database"], caplog.text)
 
 
 @patch("os.remove")
