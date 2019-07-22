@@ -77,6 +77,7 @@ function deploy_infringement_transform_stack {
         ParameterKey=DbName,ParameterValue=$DB_NAME \
         ParameterKey=DbUser,ParameterValue=$DB_INGEST_USER \
         ParameterKey=DbPassword,ParameterValue=$DB_INGEST_PASSWORD \
+        ParameterKey=DbConnectTimeout,ParameterValue=$DB_CONNECT_TIMEOUT \
         ParameterKey=S3InfringementDeliveryBucketArnExportName,ParameterValue=$APPLICATION-ingest-$ENVIRONMENT:S3InfringementDeliveryBucketArn \
         ParameterKey=LambdaSecurityGroupIdExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:LambdaSecurityGroupId \
         ParameterKey=PrivateSubnetAIdExportName,ParameterValue=$APPLICATION-store-$ENVIRONMENT:PrivateSubnetAId \

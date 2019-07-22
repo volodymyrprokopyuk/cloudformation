@@ -13,6 +13,7 @@ export DB_PORT
 export DB_NAME
 export DB_USER=$DB_INGEST_USER
 export DB_PASSWORD=$DB_INGEST_PASSWORD
+export DB_CONNECT_TIMEOUT
 
 # Lambda configuration
 export LOG_LEVEL=$LAMBDA_LOG_LEVEL

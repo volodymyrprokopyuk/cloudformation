@@ -26,6 +26,7 @@ def db_config(monkeypatch):
         "DB_NAME": "name",
         "DB_USER": "user",
         "DB_PASSWORD": "password",
+        "DB_CONNECT_TIMEOUT": "connect_timeout",
     }
     for key, value in config.items():
         monkeypatch.setenv(key, value)

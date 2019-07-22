@@ -21,6 +21,7 @@ readonly SNS_INFRINGEMENT_IMPORT_ALARM_NOTIFICATION_EMAIL=volodymyr.prokopyuk@na
 
 # infringement-store service configuration
 readonly BASTION_USER=ec2-user
+readonly DB_CONNECT_TIMEOUT=30
 readonly DB_PORT=5432
 readonly DB_LOCAL_PORT=15432
 readonly DB_NAME=infringement

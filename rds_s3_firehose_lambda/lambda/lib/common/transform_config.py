@@ -10,6 +10,7 @@ def _get_env_specific_config():
     config["db_name"] = os.getenv("DB_NAME")
     config["db_user"] = os.getenv("DB_USER")
     config["db_password"] = os.getenv("DB_PASSWORD")
+    config["db_connect_timeout"] = os.getenv("DB_CONNECT_TIMEOUT")
     return config
 
 

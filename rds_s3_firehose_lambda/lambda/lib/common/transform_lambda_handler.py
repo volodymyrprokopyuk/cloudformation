@@ -12,13 +12,19 @@ from common.logger import with_logger, log_environment, log_document_context
 
 LOGGER_NAME = "main"
 DOCUMENT_IMPORT_FAILURE_THRESHOLD = 0.2
-DB_CONNECT_TIMEOUT = 30
 
 
 def _validate_config(local_config):
     errors = []
     # Validate RDS endpoint and credentials
-    attributes = ["db_host", "db_port", "db_name", "db_user", "db_password"]
+    attributes = [
+        "db_host",
+        "db_port",
+        "db_name",
+        "db_user",
+        "db_password",
+        "db_connect_timeout",
+    ]
     for attribute in attributes:
         if not local_config.get(attribute):
             errors.append(f"mandatory {attribute} is not provided")
@@ -263,8 +269,8 @@ def _lambda_handler(logger, process_request, event, context):
                         "dbname": local_config["db_name"],
                         "user": local_config["db_user"],
                         "password": local_config["db_password"],
+                        "connect_timeout": local_config["db_connect_timeout"],
                         "cursor_factory": RealDictCursor,
-                        "connect_timeout": DB_CONNECT_TIMEOUT,
                     }
                     rds = psycopg2.connect(**rds_config)
                     local_config["rds"] = rds

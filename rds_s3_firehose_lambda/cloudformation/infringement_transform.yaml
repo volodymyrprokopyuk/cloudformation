@@ -24,6 +24,9 @@ Parameters:
     DbPassword:
         Description: Database super user password
         Type: String
+    DbConnectTimeout:
+        Description: Database connection timeout
+        Type: Number
     # S3
     S3InfringementDeliveryBucketArnExportName:
         Description: Kinesis Firehose infringement delivey S3 bucket ARN export name
@@ -151,6 +154,7 @@ Resources:
                     DB_NAME: !Ref DbName
                     DB_USER: !Ref DbUser
                     DB_PASSWORD: !Ref DbPassword
+                    DB_CONNECT_TIMEOUT: !Ref DbConnectTimeout
             Code:
                 S3Bucket: !Ref S3LambdaPackageBucketName
                 S3Key: !Sub PutProductInDbLambda-${LambdaPutProductInDbVersion}.zip
@@ -225,6 +229,7 @@ Resources:
                     DB_NAME: !Ref DbName
                     DB_USER: !Ref DbUser
                     DB_PASSWORD: !Ref DbPassword
+                    DB_CONNECT_TIMEOUT: !Ref DbConnectTimeout
             Code:
                 S3Bucket: !Ref S3LambdaPackageBucketName
                 S3Key: !Sub PutInfringementInDbLambda-${LambdaPutInfringementInDbVersion}.zip
