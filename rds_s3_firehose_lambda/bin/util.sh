@@ -2,13 +2,21 @@ set $SETOPTS
 
 function setup_virtual_environment {
     local pyvenv=${1?ERROR: mandatory virtual environment name is not provided}
+    local install_test_deps=${2:-}
 
     if [[ ! -d $pyvenv ]]; then
         python -m venv $pyvenv
+        set +x
         source $pyvenv/bin/activate
+        set -x
         pip install -r requirements.txt
+        if [[ -n $install_test_deps ]]; then
+           pip install -r requirements.test.txt
+        fi
     else
+        set +x
         source $pyvenv/bin/activate
+        set -x
     fi
 }
 

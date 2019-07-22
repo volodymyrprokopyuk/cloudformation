@@ -18,7 +18,7 @@ function unit_test_lambda_function {
     cd $lambda_function_source
     cp $LAMBDA_COMMON_TEST_DATA/*.txt $LAMBDA_TEST_DATA_DIR
     cp $lambda_function_test_data/*.txt $LAMBDA_TEST_DATA_DIR
-    setup_virtual_environment $PYVENV
+    setup_virtual_environment $PYVENV install_test_deps
     export PYTHONPATH=$LAMBDA_LIB_DIR:$lambda_function_source
     # transform lambda common test
     pytest -x -v -s --disable-pytest-warnings \
