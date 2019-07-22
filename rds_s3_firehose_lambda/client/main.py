@@ -12,8 +12,8 @@ def _validate_request():
             "Usage: python main.py {-p <product file> | -i <infringment file>}"
         )
     envs = [
-        "FIREHOSE_PRODUCT_DELIVERY_STREAM_NAME",
-        "FIREHOSE_INFRINGEMENT_DELIVERY_STREAM_NAME",
+        "PRODUCT_DELIVERY_STREAM_NAME",
+        "INFRINGEMENT_DELIVERY_STREAM_NAME",
     ]
     # Check environment variables
     for env in envs:
@@ -26,8 +26,8 @@ def _prepare_request():
     request = {}
     # Kinesis Firehose delivery stream names configuration
     delivery_streams = {
-        "-p": os.getenv("FIREHOSE_PRODUCT_DELIVERY_STREAM_NAME"),
-        "-i": os.getenv("FIREHOSE_INFRINGEMENT_DELIVERY_STREAM_NAME"),
+        "-p": os.getenv("PRODUCT_DELIVERY_STREAM_NAME"),
+        "-i": os.getenv("INFRINGEMENT_DELIVERY_STREAM_NAME"),
     }
     # Get Kinesis Firehose delivery stream name corresponding to the type of the data
     # file to send to the Kinesis Firehose delivery stream
