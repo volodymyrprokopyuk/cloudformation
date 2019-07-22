@@ -13,6 +13,15 @@ export PYTHONPATH=$LAMBDA_LIB_DIR:$LAMBDA_SOURCE
 cp $LAMBDA_TEST_DATA/*.txt /tmp
 
 cd $LAMBDA_SOURCE
+
+if [[ ! -d $PYVENV ]]; then
+    python -m venv $PYVENV
+    source $PYVENV/bin/activate
+    pip install -r requirements.txt
+else
+    source $PYVENV/bin/activate
+fi
+
 pytest -x -v -s --disable-pytest-warnings \
     --cov $LAMBDA_COMMON_SOURCE --cov $LAMBDA_SOURCE \
     --cov-report term --cov-report html $LAMBDA_TEST
