@@ -11,10 +11,10 @@ readonly PYVENV=pyvenv
 readonly S3_INFRINGEMENT_DELIVERY_BUCKET_SUFFIX=firehose-infringement-delivery
 
 # infringement-transform service configuration
-readonly S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME=infringement-transform-lambda-package
-readonly LAMBDA_LOG_LEVEL=DEBUG
-readonly LAMBDA_FUNCTION_DIR=$(pwd)/lambda/function
 readonly LAMBDA_LIB_DIR=$(pwd)/lambda/lib
+readonly LAMBDA_FUNCTION_DIR=$(pwd)/lambda/function
+readonly LAMBDA_LOG_LEVEL=DEBUG
+readonly S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME=infringement-transform-lambda-package
 readonly LAMBDA_PUT_PRODUCT_IN_DB_VERSION=$(cat $LAMBDA_FUNCTION_DIR/PutProductInDbLambda/version)
 readonly LAMBDA_PUT_INFRINGEMENT_IN_DB_VERSION=$(cat $LAMBDA_FUNCTION_DIR/PutInfringementInDbLambda/version)
 readonly SNS_INFRINGEMENT_IMPORT_ALARM_NOTIFICATION_EMAIL=volodymyr.prokopyuk@nagra.com

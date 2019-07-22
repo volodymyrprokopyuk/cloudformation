@@ -1,5 +1,15 @@
 set $SETOPTS
 
+function setup_virtual_environment {
+    if [[ ! -d $PYVENV ]]; then
+        python -m venv $PYVENV
+        source $PYVENV/bin/activate
+        pip install -r requirements.txt
+    else
+        source $PYVENV/bin/activate
+    fi
+}
+
 function create_s3_bucket_if_not_exists {
     local s3_bucket_name=${1?ERROR: mandatory S3 bucket name is not provided}
 
