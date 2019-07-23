@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from lambda_function import lambda_handler
 from common.test.util import all_in, all_not_in
 
