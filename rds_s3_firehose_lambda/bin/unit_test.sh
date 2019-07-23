@@ -23,11 +23,13 @@ function unit_test_lambda_function {
     # transform lambda common test
     pytest -x -v -s --disable-pytest-warnings \
         --cov $LAMBDA_COMMON_SOURCE --cov $lambda_function_source \
-        --cov-report term --cov-report html $LAMBDA_COMMON_TEST
+        --cov-report term --cov-report html \
+        $LAMBDA_COMMON_TEST/unit_test.py
     # transform lambda function test
     pytest -x -v -s --disable-pytest-warnings \
         --cov $LAMBDA_COMMON_SOURCE --cov $lambda_function_source \
-        --cov-report term --cov-report html --cov-append $lambda_function_test
+        --cov-report term --cov-report html --cov-append \
+        $lambda_function_test/unit_test.py
     unset PYTHONPATH
 }
 
