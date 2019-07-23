@@ -136,7 +136,7 @@ function destroy_ssh_tunnel {
     local bastion_user=${4?ERROR: mandatory bastion user is not provided}
     local bastion_host=${5?ERROR: mandatory bastion host is not provided}
 
-    local ssh_tunnel_pattern="ssh.*$local_port:$remote_host:$remote_port $bastion_user@$bastion_host"
+    local ssh_tunnel_pattern="ssh.*$local_port:$remote_host:$remote_port.*$bastion_user@$bastion_host"
     pkill -f "${ssh_tunnel_pattern}"
 }
 
@@ -147,6 +147,6 @@ function is_ssh_tunnel_created {
     local bastion_user=${4?ERROR: mandatory bastion user is not provided}
     local bastion_host=${5?ERROR: mandatory bastion host is not provided}
 
-    local ssh_tunnel_pattern="ssh.*$local_port:$remote_host:$remote_port $bastion_user@$bastion_host"
+    local ssh_tunnel_pattern="ssh.*$local_port:$remote_host:$remote_port.*$bastion_user@$bastion_host"
     pgrep -f "${ssh_tunnel_pattern}"
 }

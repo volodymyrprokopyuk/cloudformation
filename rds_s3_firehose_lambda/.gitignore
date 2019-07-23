@@ -1,2 +1,3 @@
+database/database_user.sql
 lambda/lib/psycopg2/
 lambda/function/*/*.zip
