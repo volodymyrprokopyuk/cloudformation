@@ -70,6 +70,8 @@ def test_put_record_in_db_error(
     pg_connect_mock.return_value = rds_mock
     lambda_handler(success_event, None)
     assert all_in(["ERROR", "Put record in database"], caplog.text)
+    rds_mock.close.assert_called_once()
+    rds_mock.rollback.assert_called()
 
 
 @patch("os.remove")
@@ -109,5 +111,9 @@ def test_process_request_with_invalid_records_below_threshold_success(
 def test_process_request_success(
     boto3_client_mock, pg_connect_mock, os_remove_mock, db_config, success_event, caplog
 ):
+    rds_mock = MagicMock()
+    pg_connect_mock.return_value = rds_mock
     lambda_handler(success_event, None)
     assert all_in(["INFO", "SUCCESS", "IMPORT_SUCCESS"], caplog.text)
+    rds_mock.close.assert_called_once()
+    rds_mock.commit.assert_called()

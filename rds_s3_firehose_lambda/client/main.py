@@ -11,10 +11,7 @@ def _validate_request():
         errors.append(
             "Usage: python main.py {-p <product file> | -i <infringment file>}"
         )
-    envs = [
-        "PRODUCT_DELIVERY_STREAM_NAME",
-        "INFRINGEMENT_DELIVERY_STREAM_NAME",
-    ]
+    envs = ["PRODUCT_DELIVERY_STREAM_NAME", "INFRINGEMENT_DELIVERY_STREAM_NAME"]
     # Check environment variables
     for env in envs:
         if not os.getenv(env):
