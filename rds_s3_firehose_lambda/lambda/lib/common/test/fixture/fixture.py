@@ -1,3 +1,6 @@
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from pytest import fixture
 from common.test.util import create_transform_event
 
@@ -59,3 +62,19 @@ def invalid_document_event():
 def event():
     event = create_transform_event("bucket_name", "object_key")
     return event
+
+# RDS fixture
+@fixture(scope="session")
+def rds():
+    rds_config = {
+        "host": os.getenv("DB_HOST"),
+        "port": os.getenv("DB_PORT"),
+        "dbname": os.getenv("DB_NAME"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD"),
+        "connect_timeout": os.getenv("DB_CONNECT_TIMEOUT"),
+        "cursor_factory": RealDictCursor,
+    }
+    rds = psycopg2.connect(**rds_config)
+    yield rds
+    rds.close()

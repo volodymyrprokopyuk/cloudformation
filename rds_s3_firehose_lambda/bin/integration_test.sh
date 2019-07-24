@@ -9,8 +9,8 @@ set $SETOPTS
 export DB_HOST=localhost
 export DB_PORT
 export DB_NAME
-export DB_USER=$DB_INGEST_USER
-export DB_PASSWORD=$DB_INGEST_PASSWORD
+export DB_USER=$DB_SUPER_USER
+export DB_PASSWORD=$DB_SUPER_PASSWORD
 export DB_CONNECT_TIMEOUT
 
 readonly LAMBDA_TEST_DATA_DIR=/tmp
@@ -33,6 +33,6 @@ function integration_test_lambda_function {
 
 ./bin/create_db_schema.sh -l
 
-for lambda_function_source in $LAMBDA_FUNCTION_DIR/*Product*; do
+for lambda_function_source in $LAMBDA_FUNCTION_DIR/*; do
     integration_test_lambda_function $lambda_function_source
 done

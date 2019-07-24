@@ -23,3 +23,13 @@ def invalid_records_below_threshold_event():
 def success_event():
     event = create_transform_event("bucket_name", "product_success.txt")
     return event
+
+
+# Database fixture
+@fixture
+def post_delete_all_from_product(rds):
+    yield
+    with rds.cursor() as cursor:
+        sql = """DELETE FROM ingest.product;"""
+        cursor.execute(sql)
+        rds.commit()
