@@ -1,15 +1,6 @@
 from unittest.mock import patch
 from lambda_function import lambda_handler
-from common.test.util import all_in, all_not_in
-
-
-def _get_product_count(rds):
-    with rds.cursor() as cursor:
-        sql = """SELECT COUNT(*) product_count FROM ingest.product;"""
-        cursor.execute(sql)
-        result = cursor.fetchone()
-        product_count = result["product_count"]
-        return product_count
+from common.test.util import all_in, all_not_in, get_product_count
 
 
 @patch("os.remove")
@@ -24,7 +15,7 @@ def test_import_document_error(
 ):
     lambda_handler(invalid_records_above_threshold_event, None)
     assert all_in(["ERROR", "IMPORT_FAILURE"], caplog.text)
-    product_count = _get_product_count(rds)
+    product_count = get_product_count(rds)
     assert product_count == 2
 
 
@@ -41,5 +32,5 @@ def test_process_request_success(
     lambda_handler(success_event, None)
     assert all_not_in(["CRITICAL", "ERROR", "WARNING"], caplog.text)
     assert all_in(["INFO", "SUCCESS", "IMPORT_SUCCESS"], caplog.text)
-    product_count = _get_product_count(rds)
+    product_count = get_product_count(rds)
     assert product_count == 2

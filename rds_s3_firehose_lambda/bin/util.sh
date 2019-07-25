@@ -150,3 +150,29 @@ function is_ssh_tunnel_created {
     local ssh_tunnel_pattern="ssh.*$local_port:$remote_host:$remote_port.*$bastion_user@$bastion_host"
     pgrep -f "${ssh_tunnel_pattern}"
 }
+
+function create_ssh_tunnel_if_not_exists {
+    local local_port=${1?ERROR: mandatory local port is not provided}
+    local remote_host=${2?ERROR: mandatory remote host is not provided}
+    local remote_port=${3?ERROR: mandatory remote port is not provided}
+    local bastion_user=${4?ERROR: mandatory bastion user is not provided}
+    local bastion_host=${5?ERROR: mandatory bastion host is not provided}
+
+    if ! is_ssh_tunnel_created \
+        $local_port $remote_host $remote_port $bastion_user $bastion_host; then
+        create_ssh_tunnel $local_port $remote_host $remote_port $bastion_user $bastion_host
+    fi
+}
+
+function destroy_ssh_tunnel_if_exists {
+    local local_port=${1?ERROR: mandatory local port is not provided}
+    local remote_host=${2?ERROR: mandatory remote host is not provided}
+    local remote_port=${3?ERROR: mandatory remote port is not provided}
+    local bastion_user=${4?ERROR: mandatory bastion user is not provided}
+    local bastion_host=${5?ERROR: mandatory bastion host is not provided}
+
+    if is_ssh_tunnel_created \
+        $local_port $remote_host $remote_port $bastion_user $bastion_host; then
+        destroy_ssh_tunnel $local_port $remote_host $remote_port $bastion_user $bastion_host
+    fi
+}

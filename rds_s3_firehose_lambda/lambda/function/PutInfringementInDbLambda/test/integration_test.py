@@ -1,15 +1,6 @@
 from unittest.mock import patch
 from lambda_function import lambda_handler
-from common.test.util import all_in, all_not_in
-
-
-def _get_infringement_count(rds):
-    with rds.cursor() as cursor:
-        sql = """SELECT COUNT(*) infringement_count FROM ingest.infringement;"""
-        cursor.execute(sql)
-        result = cursor.fetchone()
-        infringement_count = result["infringement_count"]
-        return infringement_count
+from common.test.util import all_in, all_not_in, get_infringement_count
 
 
 @patch("os.remove")
@@ -24,7 +15,7 @@ def test_non_existing_product_error(
 ):
     lambda_handler(success_event, None)
     assert all_in(["ERROR", "Put record in database", "IMPORT_FAILURE"], caplog.text)
-    infringement_count = _get_infringement_count(rds)
+    infringement_count = get_infringement_count(rds)
     assert infringement_count == 0
 
 
@@ -41,7 +32,7 @@ def test_import_document_error(
 ):
     lambda_handler(invalid_records_above_threshold_event, None)
     assert all_in(["ERROR", "IMPORT_FAILURE"], caplog.text)
-    infringement_count = _get_infringement_count(rds)
+    infringement_count = get_infringement_count(rds)
     assert infringement_count == 2
 
 
@@ -59,5 +50,5 @@ def test_process_request_success(
     lambda_handler(success_event, None)
     assert all_not_in(["CRITICAL", "ERROR", "WARNING"], caplog.text)
     assert all_in(["INFO", "SUCCESS", "IMPORT_SUCCESS"], caplog.text)
-    infringement_count = _get_infringement_count(rds)
+    infringement_count = get_infringement_count(rds)
     assert infringement_count == 2

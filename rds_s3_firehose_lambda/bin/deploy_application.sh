@@ -18,8 +18,6 @@ Target:
 EOF
 set -e
 
-readonly CF_DIR=$(pwd)/cloudformation
-
 function _decide_stack_action {
     local stack_name=${1?ERROR: mandatory stack name is not provided}
 
@@ -105,7 +103,7 @@ function deploy_infringement_store_stack {
     aws cloudformation $stack_action --stack-name $stack_name \
         --template-body file://$stack_template \
         --parameters \
-        ParameterKey=DbPort,ParameterValue=$DB_PORT \
+        ParameterKey=DbPort,ParameterValue=$DB_LOCAL_PORT \
         ParameterKey=DbName,ParameterValue=$DB_NAME \
         ParameterKey=DbUser,ParameterValue=$DB_SUPER_USER \
         ParameterKey=DbPassword,ParameterValue=$DB_SUPER_PASSWORD

@@ -195,45 +195,6 @@ LANGUAGE sql AS $$
     RETURNING product_id;
 $$;
 
--- CREATE OR REPLACE FUNCTION ingest.put_infringement(
---     a_product_external_id varchar(20),
---     a_pirate_source_external_id varchar(20),
---     a_detection_ts timestamptz,
---     a_infringement_url varchar(500),
---     a_infringement_status ingest.infringement_status_t
--- )
--- RETURNS integer
--- LANGUAGE sql AS $$
---     WITH infringement_product AS (
---         SELECT product_id
---         FROM ingest.product
---         WHERE product_external_id = a_product_external_id
---     ),
---     infringement_pirate_source AS (
---         SELECT pirate_source_id
---         FROM ingest.pirate_source
---         WHERE pirate_source_external_id = a_pirate_source_external_id
---     )
---     INSERT INTO ingest.infringement (
---         product_id,
---         pirate_source_id,
---         detection_ts,
---         infringement_url,
---         infringement_status
---     )
---     SELECT
---         infringement_product.product_id,
---         infringement_pirate_source.pirate_source_id,
---         a_detection_ts,
---         a_infringement_url,
---         a_infringement_status
---     FROM infringement_product, infringement_pirate_source
---     ON CONFLICT ON CONSTRAINT uq_infringement_product_id_pirate_source_id_detection_ts_url
---     DO UPDATE SET
---         infringement_status = excluded.infringement_status
---     RETURNING infringement_id;
--- $$;
-
 CREATE OR REPLACE FUNCTION ingest.put_infringement(
     a_product_external_id varchar(20),
     a_pirate_source_external_id varchar(20),

@@ -6,8 +6,8 @@ source ./bin/util.sh
 set $SETOPTS
 
 # Database configuration
-export DB_HOST=localhost
-export DB_PORT
+export DB_HOST
+export DB_PORT=$DB_LOCAL_PORT
 export DB_NAME
 export DB_USER=$DB_SUPER_USER
 export DB_PASSWORD=$DB_SUPER_PASSWORD

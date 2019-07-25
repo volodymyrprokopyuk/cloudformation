@@ -1,0 +1,1 @@
+{"product_external_id": "PROD000", "pirate_source_external_id": "PSRC001", "detection_ts": "2000-01-01 00:00:00+0200", "infringement_url": "https://www.pirate1.com/movies/0", "infringement_status": "TAKEN_DOWN"}
