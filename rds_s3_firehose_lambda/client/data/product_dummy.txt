@@ -1,1 +1,1 @@
-{"product_external_id": "PROD000", "product_title": "Dummy product", "first_protection_ts": "2000-01-01 00:00:00+0200", "product_image_url": "https://api.movies.com/movies/0", "registration_ts": "2000-01-01 00:00:00+0200", "protection_status": "INACTIVE"}
+{"product_external_id": "PROD000", "product_title": "Dummy product", "first_protection_ts": "2000-01-01 00:00:00+0000", "product_image_url": "https://api.movies.com/movies/0", "registration_ts": "2000-01-01 00:00:00+0000", "protection_status": "INACTIVE"}

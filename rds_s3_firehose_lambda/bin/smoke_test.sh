@@ -5,15 +5,6 @@ source ./bin/util.sh
 
 set $SETOPTS
 
-# Deploy application
-# ./bin/deploy_application.sh infringement-all
-
-# Create database schema in RDS database instance
-./bin/create_db_schema.sh
-# Send test data to Kinesis Firehose delivery streams
-./bin/send_data_to_firehose.sh -p product*.txt -i infringement*.txt
-sleep 80
-
 # Create SSH tunnel to the RDS database instance
 readonly STACK_NAME=$APPLICATION-store-$ENVIRONMENT
 readonly RDS_ENDPOINT_ADDRESS=$(get_cf_export_value $STACK_NAME:RdsEndpointAddress)
@@ -32,19 +23,30 @@ export DB_USER=$DB_INGEST_USER
 export DB_PASSWORD=$DB_INGEST_PASSWORD
 export DB_CONNECT_TIMEOUT
 
-# Execute E2E test
+# Delete dummy data from the RDS database instance
+read -d "" SQL_DELETE_DUMMY <<EOF
+DELETE FROM ingest.infringement i WHERE i.product_id IN (
+    SELECT p.product_id FROM ingest.product p WHERE p.product_external_id = 'PROD000'
+);
+DELETE FROM ingest.product p WHERE p.product_external_id = 'PROD000';
+EOF
+export PGPASSWORD=$DB_SUPER_PASSWORD
+psql -h $DB_HOST -p $DB_BOUND_PORT -c "${SQL_DELETE_DUMMY}" $DB_NAME $DB_SUPER_USER
+
+# Send dummy data to Kinesis Firehose delivery streams
+./bin/send_data_to_firehose.sh -p product_dummy.txt -i infringement_dummy.txt
+sleep 80
+
+# Execute smote test
 cd $TEST_DIR
 setup_virtual_environment $PYVENV
 export PYTHONPATH=$LAMBDA_LIB_DIR
-pytest -x -v -s --disable-pytest-warnings $TEST_DIR/e2e_test.py
+pytest -x -v -s --disable-pytest-warnings $TEST_DIR/smoke_test.py
 readonly TEST_RESULT=$?
 unset PYTHONPATH
 
 # Destroy SSH tunnel to RDS database instance
 destroy_ssh_tunnel_if_exists $DB_TUNNEL_PORT $RDS_ENDPOINT_ADDRESS $DB_RDS_PORT \
     $BASTION_USER $BASTION_IP
-
-# Undeploy application
-# ./bin/undeploy_application.sh -y
 
 exit $TEST_RESULT

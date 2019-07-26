@@ -20,12 +20,12 @@ function unit_test_lambda_function {
     cp $lambda_function_test_data/*.txt $LAMBDA_TEST_DATA_DIR
     setup_virtual_environment $PYVENV install_test_deps
     export PYTHONPATH=$LAMBDA_LIB_DIR:$lambda_function_source
-    # transform lambda common test
+    # Test transform lambda common logic
     pytest -x -v -s --disable-pytest-warnings \
         --cov $LAMBDA_COMMON_SOURCE --cov $lambda_function_source \
         --cov-report term --cov-report html \
         $LAMBDA_COMMON_TEST/unit_test.py
-    # transform lambda function test
+    # Test transform lambda function
     pytest -x -v -s --disable-pytest-warnings \
         --cov $LAMBDA_COMMON_SOURCE --cov $lambda_function_source \
         --cov-report term --cov-report html --cov-append \

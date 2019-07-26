@@ -19,11 +19,11 @@ if (( $# == 1 )) && [[ $1 == -l ]]; then
     readonly DB_BOUND_PORT=$DB_LOCAL_PORT
 # Target RDS database instance
 else
+    # Create SSH tunnel to the RDS database instance
     readonly STACK_NAME=$APPLICATION-store-$ENVIRONMENT
     readonly RDS_ENDPOINT_ADDRESS=$(get_cf_export_value $STACK_NAME:RdsEndpointAddress)
     readonly BASTION_IP=$(get_cf_export_value $STACK_NAME:BastionEc2PublicIp)
     readonly DB_RDS_PORT=$DB_LOCAL_PORT
-    # Create SSH tunnel to the RDS database instance
     create_ssh_tunnel_if_not_exists $DB_TUNNEL_PORT $RDS_ENDPOINT_ADDRESS $DB_RDS_PORT \
         $BASTION_USER $BASTION_IP
     readonly DB_BOUND_PORT=$DB_TUNNEL_PORT
