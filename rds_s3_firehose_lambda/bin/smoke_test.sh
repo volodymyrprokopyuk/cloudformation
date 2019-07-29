@@ -24,7 +24,7 @@ export DB_PASSWORD=$DB_INGEST_PASSWORD
 export DB_CONNECT_TIMEOUT
 
 # Delete dummy data from the RDS database instance
-read -d "" SQL_DELETE_DUMMY <<EOF
+read -r -d "" SQL_DELETE_DUMMY <<EOF
 DELETE FROM ingest.infringement i WHERE i.product_id IN (
     SELECT p.product_id FROM ingest.product p WHERE p.product_external_id = 'PROD000'
 );

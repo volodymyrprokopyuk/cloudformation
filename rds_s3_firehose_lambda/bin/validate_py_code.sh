@@ -6,7 +6,7 @@ set $SETOPTS
 
 readonly LINE_LENGTH=88
 readonly PY_SOURCE="client/*.py lambda/lib/common/*.py lambda/function/*/*.py"
-# readonly PY_TEST_SOURCE="lambda/function/*/test/*.py"
+# shellcheck disable=SC2010
 readonly PY_TEST_SOURCE=$(ls lambda/function/*/test/*.py | grep -v 'conftest.py')
 
 # Validate Python source code

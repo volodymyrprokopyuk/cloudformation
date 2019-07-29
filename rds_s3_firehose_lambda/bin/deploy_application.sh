@@ -6,7 +6,7 @@ source ./bin/util.sh
 set $SETOPTS
 
 set +e
-read -d "" USAGE <<EOF
+read -r -d "" USAGE <<EOF
 Usage:
     ./bin/deploy_service_stack target"
 Target:
@@ -155,4 +155,4 @@ function deploy_service_stack {
     set -u
 }
 
-deploy_service_stack $@
+deploy_service_stack "$@"

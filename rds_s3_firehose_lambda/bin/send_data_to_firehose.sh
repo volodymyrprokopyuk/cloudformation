@@ -8,8 +8,8 @@ set $SETOPTS
 readonly CLIENT_SCRIPT=$CLIENT_DIR/main.py
 readonly CLIENT_DATA=$CLIENT_DIR/data
 
-PRODUCT_PATTERN=product*.txt
-INFRINGEMENT_PATTERN=infringement*.txt
+PRODUCT_PATTERN='product*.txt'
+INFRINGEMENT_PATTERN='infringement*.txt'
 
 function read_options {
     while (( $# )); do
@@ -33,7 +33,7 @@ function read_options {
     done
 }
 
-read_options $@
+read_options "$@"
 
 cd $CLIENT_DIR
 

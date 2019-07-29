@@ -54,7 +54,7 @@ function prompt_for_delete {
     if [[ $1 == -y ]]; then
         RESPONSE=YES
     else
-        read RESPONSE
+        read -r RESPONSE
     fi
     set -u
     if [[ $RESPONSE == YES ]]; then
@@ -66,4 +66,4 @@ function prompt_for_delete {
     fi
 }
 
-prompt_for_delete $@
+prompt_for_delete "$@"

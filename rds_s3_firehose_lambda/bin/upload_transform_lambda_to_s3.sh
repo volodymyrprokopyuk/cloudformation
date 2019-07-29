@@ -27,6 +27,7 @@ function create_and_upload_lambda_archive_to_s3 {
     zip -9 -q -r $lambda_archive . -x '*test/*' -x '*__pycache__/*' -x '*~'
     # Add lambda function source code
     cd $lambda_dir
+    # shellcheck disable=SC2035
     zip -9 -q $lambda_archive *.py
     # Upload lambda archive to S3
     aws s3 cp $lambda_archive s3://$S3_TRANSFORM_LAMBDA_PACKAGE_BUCKET_NAME

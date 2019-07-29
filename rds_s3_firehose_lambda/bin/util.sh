@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 set $SETOPTS
 
 function setup_virtual_environment {
@@ -7,6 +8,7 @@ function setup_virtual_environment {
     if [[ ! -d $pyvenv ]]; then
         python -m venv $pyvenv
         set +x
+        # shellcheck disable=SC1090
         source $pyvenv/bin/activate
         set -x
         pip install -r requirements.txt
@@ -15,6 +17,7 @@ function setup_virtual_environment {
         fi
     else
         set +x
+        # shellcheck disable=SC1090
         source $pyvenv/bin/activate
         set -x
     fi
