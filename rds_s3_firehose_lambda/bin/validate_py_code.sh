@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source ./bin/config.sh
+source ./bin/util.sh
 
 set $SETOPTS
 
@@ -8,6 +9,10 @@ readonly LINE_LENGTH=88
 readonly PY_SOURCE="client/*.py lambda/lib/common/*.py lambda/function/*/*.py"
 # shellcheck disable=SC2010
 readonly PY_TEST_SOURCE=$(ls lambda/function/*/test/*.py | grep -v 'conftest.py')
+
+cd $BIN_DIR
+setup_virtual_environment $PYVENV
+cd $ROOT_DIR
 
 # Validate Python source code
 black --line-length $LINE_LENGTH $PY_SOURCE

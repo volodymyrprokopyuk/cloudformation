@@ -5,6 +5,10 @@ source ./bin/util.sh
 
 set $SETOPTS
 
+cd $BIN_DIR
+setup_virtual_environment $PYVENV
+cd $ROOT_DIR
+
 # Compose Kinesis Firehose infringement delivery bucket name
 readonly STACK_NAME=$APPLICATION-ingest-$ENVIRONMENT
 readonly LOWER_STACK_NAME=$(echo $STACK_NAME | tr '[:upper:]' '[:lower:]')

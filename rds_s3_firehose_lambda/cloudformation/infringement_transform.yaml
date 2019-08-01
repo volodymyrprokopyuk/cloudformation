@@ -57,6 +57,7 @@ Parameters:
         Description: Lambda log level
         Type: String
         Default: INFO
+        AllowedValues: [DEBUG, INFO, WARNING, ERROR, CRITICAL]
     LambdaPutProductInDbVersion:
         Description: PutProductInDb lambda version
         Type: String
@@ -179,7 +180,7 @@ Resources:
         DeletionPolicy: Delete # Retain
         DependsOn: PutProductInDbLambda
         Properties:
-            LogGroupName: !Sub /aws/lambda/${AWS::StackName}-${PutProductInDbLambda}
+            LogGroupName: !Sub /aws/lambda/${PutProductInDbLambda}
             RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
     # Product import metric filters
     CloudWatchImportProductDocumentSuccessCount:
@@ -254,7 +255,7 @@ Resources:
         DeletionPolicy: Delete # Retain
         DependsOn: PutInfringementInDbLambda
         Properties:
-            LogGroupName: !Sub /aws/lambda/${AWS::StackName}-${PutInfringementInDbLambda}
+            LogGroupName: !Sub /aws/lambda/${PutInfringementInDbLambda}
             RetentionInDays: !Ref CloudWatchPutDataInDbLambdaLogRetentionDays
     # Infringement import metric filters
     CloudWatchImportInfringementDocumentSuccessCount:

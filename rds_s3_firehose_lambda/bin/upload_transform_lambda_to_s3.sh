@@ -5,6 +5,10 @@ source ./bin/util.sh
 
 set $SETOPTS
 
+cd $BIN_DIR
+setup_virtual_environment $PYVENV
+cd $ROOT_DIR
+
 function create_and_upload_lambda_archive_to_s3 {
     local lambda_dir=${1?ERROR: mandatory lambda source direcotry is not provided}
     local lambda_name=${lambda_dir##*/}

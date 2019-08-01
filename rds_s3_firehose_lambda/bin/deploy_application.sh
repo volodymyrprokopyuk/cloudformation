@@ -155,4 +155,8 @@ function deploy_service_stack {
     set -u
 }
 
+cd $BIN_DIR
+setup_virtual_environment $PYVENV
+cd $ROOT_DIR
+
 deploy_service_stack "$@"

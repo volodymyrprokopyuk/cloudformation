@@ -66,4 +66,8 @@ function prompt_for_delete {
     fi
 }
 
+cd $BIN_DIR
+setup_virtual_environment $PYVENV
+cd $ROOT_DIR
+
 prompt_for_delete "$@"

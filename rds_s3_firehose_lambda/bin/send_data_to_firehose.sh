@@ -36,7 +36,6 @@ function read_options {
 read_options "$@"
 
 cd $CLIENT_DIR
-
 setup_virtual_environment $PYVENV
 
 readonly STACK_NAME=$APPLICATION-ingest-$ENVIRONMENT
@@ -58,7 +57,7 @@ for data_file in $CLIENT_DATA/$PRODUCT_PATTERN; do
     python $CLIENT_SCRIPT -p $data_file
 done
 
-sleep 5
+sleep 10
 
 # Send infringement data to the corresponding Kinesis Firehose delivery stream
 for data_file in $CLIENT_DATA/$INFRINGEMENT_PATTERN; do

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source ./bin/config.sh
+source ./bin/util.sh
 
 set $SETOPTS
 
@@ -13,7 +14,11 @@ if [[ ! -f $1 ]]; then
 fi
 set -u
 
-CF_TEMPLATE=$(pwd)/$1
+readonly CF_TEMPLATE=$(pwd)/$1
+
+cd $BIN_DIR
+setup_virtual_environment $PYVENV
+cd $ROOT_DIR
 
 # Validate CloudFormation template
 aws cloudformation validate-template --template-body file://$CF_TEMPLATE

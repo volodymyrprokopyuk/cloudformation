@@ -5,6 +5,10 @@ source ./bin/util.sh
 
 set $SETOPTS
 
+cd $BIN_DIR
+setup_virtual_environment $PYVENV
+cd $ROOT_DIR
+
 # Deploy application
 # ./bin/deploy_application.sh infringement-all
 

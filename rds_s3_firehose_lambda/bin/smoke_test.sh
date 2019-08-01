@@ -40,6 +40,7 @@ sleep 80
 # Execute smote test
 cd $TEST_DIR
 setup_virtual_environment $PYVENV
+
 export PYTHONPATH=$LAMBDA_LIB_DIR
 pytest -x -v -s --disable-pytest-warnings $TEST_DIR/smoke_test.py
 readonly TEST_RESULT=$?
