@@ -30,8 +30,8 @@ def test_put_record_in_db_error(
     pg_connect_mock.return_value = rds_mock
     lambda_handler(success_event, None)
     assert all_in(["ERROR", "Put record in database"], caplog.text)
-    rds_mock.close.assert_called_once()
     rds_mock.rollback.assert_called()
+    rds_mock.close.assert_called_once()
 
 
 @patch("os.remove")
@@ -75,5 +75,5 @@ def test_process_request_success(
     pg_connect_mock.return_value = rds_mock
     lambda_handler(success_event, None)
     assert all_in(["INFO", "SUCCESS", "IMPORT_SUCCESS"], caplog.text)
-    rds_mock.close.assert_called_once()
     rds_mock.commit.assert_called()
+    rds_mock.close.assert_called_once()
