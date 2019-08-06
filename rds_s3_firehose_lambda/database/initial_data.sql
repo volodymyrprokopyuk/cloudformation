@@ -1,4 +1,7 @@
--- pirate_source
+-- migration.migration
+SELECT migration.put_last_migration('0001-first_migration.sql');
+
+-- ingest.pirate_source
 SELECT ingest.put_pirate_source(
     'PSRC001', 'GOOGLE', 'SEARCH_ENGINE', '2018-01-20 18:54:35+0200'
 ) pirate_source_id;
@@ -12,7 +15,7 @@ SELECT ingest.put_pirate_source(
     'PSRC003', 'TWITTER', 'SOCIAL_MEDIA', '2018-03-25 08:50:55+0200'
 ) pirate_source_id;
 
--- -- product
+-- -- ingest.product
 -- SELECT ingest.put_product(
 --     'PROD001', 'Product title 1', '2019-01-06 21:34:54+0200',
 --     '2019-02-06 21:34:54+0200', 'ACTIVE', 'https://api.movies.com/movies/1'
@@ -26,7 +29,7 @@ SELECT ingest.put_pirate_source(
 --     '2019-02-06 21:34:54+0200', 'ACTIVE', 'https://api.movies.com/movies/1'
 -- ) product_id;
 
--- -- infringement
+-- -- ingest.infringement
 -- SELECT ingest.put_infringement(
 --     'PROD001', 'PSRC001', '2019-04-06 21:34:54+0200',
 --     'https://www.pirate1.com/movies/1', 'ACTIVE'
@@ -40,7 +43,7 @@ SELECT ingest.put_pirate_source(
 --     'https://www.pirate1.com/movies/1', 'TAKEN_DOWN'
 -- ) infringement_id;
 
--- document_statictics
+-- -- ingest.document_statictics
 -- SELECT ingest.put_document_statistics(
 --     'infringement/2019/07/05/08/infringement-ingest-DEV-InfringementDeliveryStream-1-2019-07-05-08-20-53-5c76ddb8-40ab-4312-95e0-c4286d629562',
 --     'SUCCESS', 2, 2, 0

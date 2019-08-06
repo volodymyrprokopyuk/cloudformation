@@ -6,6 +6,7 @@ source ./bin/util.sh
 set $SETOPTS
 
 readonly USAGE="./bin/create_db_schema.sh [-l]"
+readonly DB_MIGRATION_SCHEMA_FILE=$DB_DIR/migration_schema.sql
 readonly DB_SCHEMA_FILE=$DB_DIR/database_schema.sql
 readonly DB_DATA_FILE=$DB_DIR/initial_data.sql
 readonly DB_USER_FILE=$DB_DIR/database_user.sql
@@ -50,6 +51,7 @@ export PGPASSWORD=$DB_SUPER_PASSWORD
 psql -h $DB_HOST -p $DB_BOUND_PORT -c "${SQL_DROP_DB}" postgres $DB_SUPER_USER
 psql -h $DB_HOST -p $DB_BOUND_PORT -c "${SQL_DROP_ROLE}" postgres $DB_SUPER_USER
 psql -h $DB_HOST -p $DB_BOUND_PORT -c "${SQL_CREATE_DB}" postgres $DB_SUPER_USER
+psql -h $DB_HOST -p $DB_BOUND_PORT -f $DB_MIGRATION_SCHEMA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
 psql -h $DB_HOST -p $DB_BOUND_PORT -f $DB_SCHEMA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
 psql -h $DB_HOST -p $DB_BOUND_PORT -f $DB_DATA_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER
 psql -h $DB_HOST -p $DB_BOUND_PORT -f $DB_USER_FILE -v ON_ERROR_STOP=1 $DB_NAME $DB_SUPER_USER

@@ -7,6 +7,7 @@ readonly ROOT_DIR=$(pwd)
 readonly BIN_DIR=$(pwd)/bin
 readonly CF_DIR=$(pwd)/cloudformation
 readonly DB_DIR=$(pwd)/database
+readonly DB_MIGRATION_DIR=$DB_DIR/migration
 readonly LAMBDA_LIB_DIR=$(pwd)/lambda/lib
 readonly LAMBDA_FUNCTION_DIR=$(pwd)/lambda/function
 readonly CLIENT_DIR=$(pwd)/client
