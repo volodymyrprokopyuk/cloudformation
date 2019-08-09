@@ -15,6 +15,8 @@
 ./bin/deploy_application.sh infringement-all
 # Create the database scheme of the infirngement data import application
 ./bin/create_db_schema.sh
+# Migrate the database scheme of the infirngement data import application
+./bin/migrate_db_schema.sh
 # End-to-end test the infirngement data import application
 ./bin/e2e_test.sh
 # Smoke test the infirngement data import application
