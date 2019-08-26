@@ -56,7 +56,7 @@ function apply_migrations_to_db {
 # Apply pending migrations to the database
 export PGPASSWORD=$DB_SUPER_PASSWORD
 readonly LAST_MIGRATION=$(get_last_migration_from_db)
-apply_migrations_to_db $LAST_MIGRATION
+apply_migrations_to_db ${LAST_MIGRATION:-""}
 
 # Destroy SSH tunnel to RDS database instance
 if (( $# == 0 )); then
