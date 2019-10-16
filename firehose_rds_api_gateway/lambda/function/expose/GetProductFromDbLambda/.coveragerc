@@ -1,0 +1,10 @@
+[run]
+omit =
+    pyvenv/*
+    test/*
+    */common/__init__.py
+    */common/logger.py
+    */common/test/*
+    */common/expose/__init__.py
+    */common/expose/expose_config.py
+    */common/expose/test/*

@@ -1,0 +1,632 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+    REST API to expose imported infringement data
+Parameters:
+    # RDS
+    RdsEndpointAddressExportName:
+        Description: RDS database endpoint address export name
+        Type: String
+    RdsEndpointPortExportName:
+        Description: RDS database endpoint port export name
+        Type: String
+    DbName:
+        Description: Database name
+        Type: String
+    DbUser:
+        Description: Database super user
+        Type: String
+    DbPassword:
+        Description: Database super user password
+        Type: String
+    DbConnectTimeout:
+        Description: Database connection timeout
+        Type: Number
+    # S3
+    S3LambdaPackageBucketName:
+        Description: Lambda package S3 bucket name
+        Type: String
+    # Lambda VPC (to access private RDS)
+    LambdaSecurityGroupIdExportName:
+        Description: Lambda SecurityGroup ID export name
+        Type: String
+    PrivateSubnetAIdExportName:
+        Description: Private Subnet A ID export name
+        Type: String
+    PrivateSubnetBIdExportName:
+        Description: Private Subnet B ID export name
+        Type: String
+    # Lambda
+    LambdaPythonRuntime:
+        Description: Lambda Python runtime
+        Type: String
+        Default: python3.7
+    LambdaTimeoutSecs:
+        Description: Lambda timeout
+        Type: Number
+        Default: 300
+    LambdaLogLevel:
+        Description: Lambda log level
+        Type: String
+        Default: INFO
+        AllowedValues: [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+    LambdaGetPartnerFromDbVersion:
+        Description: GetPartnerFromDb lambda version
+        Type: String
+    LambdaGetProductFromDbVersion:
+        Description: GetProductFromDb lambda version
+        Type: String
+    LambdaGetPirateSourceFromDbVersion:
+        Description: GetPirateSourceFromDb lambda version
+        Type: String
+    LambdaGetInfringementFromDbVersion:
+        Description: GetInfringementFromDb lambda version
+        Type: String
+    LambdaPostInfringementInDbVersion:
+        Description: PostInfringementInDb lambda version
+        Type: String
+    CloudWatchPerformDbOperationLambdaLogRetentionDays:
+        Description: CloudWatch PerformDbOperation lambda log retention period in days
+        Type: Number
+        Default: 30
+    # API Gateway
+    ApiGatewayExposeInfringementDataRestApiVersion:
+        Description: Expose infringement data REST API version
+        Type: String
+Resources:
+    # GetDataFromDb Lambda IAM Role
+    IamGetDataFromDbLambdaPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            ManagedPolicyName: !Sub ${AWS::StackName}-IamGetDataFromDbLambdaPolicy
+            Description: >-
+                Grants access to Lambda to get data from RDS
+            Path: /
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    # Lambda VPC access with ENI Elastic Network Interface
+                    - Effect: Allow
+                      Action:
+                          - ec2:CreateNetworkInterface
+                          - ec2:DescribeNetworkInterfaces
+                          - ec2:DeleteNetworkInterface
+                          - ec2:DescribeSecurityGroups
+                          - ec2:DescribeSubnets
+                          - ec2:DescribeVpcs
+                      Resource: "*"
+                    # CloudWatch
+                    - Effect: Allow
+                      Action:
+                          - logs:*
+                      Resource:
+                          - arn:aws:logs:*:*:*
+    IamGetDataFromDbLambdaRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub ${AWS::StackName}-IamGetDataFromDbLambdaRole
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+            ManagedPolicyArns:
+                - !Ref IamGetDataFromDbLambdaPolicy
+    # Get Partner from database lambda
+    GetPartnerFromDbLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: !Sub ${AWS::StackName}-GetPartnerFromDbLambda
+            Description: Get partners from database
+            Runtime: !Ref LambdaPythonRuntime
+            Timeout: !Ref LambdaTimeoutSecs
+            Environment:
+                Variables:
+                    STACK_NAME: !Ref AWS::StackName
+                    LAMBDA_VERSION: !Ref LambdaGetPartnerFromDbVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
+                    DB_HOST:
+                        Fn::ImportValue: !Ref RdsEndpointAddressExportName
+                    DB_PORT:
+                        Fn::ImportValue: !Ref RdsEndpointPortExportName
+                    DB_NAME: !Ref DbName
+                    DB_USER: !Ref DbUser
+                    DB_PASSWORD: !Ref DbPassword
+                    DB_CONNECT_TIMEOUT: !Ref DbConnectTimeout
+            Code:
+                S3Bucket: !Ref S3LambdaPackageBucketName
+                S3Key: !Sub GetPartnerFromDbLambda-${LambdaGetPartnerFromDbVersion}.zip
+            Handler: lambda_function.lambda_handler
+            VpcConfig:
+                SecurityGroupIds:
+                    - Fn::ImportValue: !Ref LambdaSecurityGroupIdExportName
+                SubnetIds:
+                    - Fn::ImportValue: !Ref PrivateSubnetAIdExportName
+                    - Fn::ImportValue: !Ref PrivateSubnetBIdExportName
+            Role: !GetAtt IamGetDataFromDbLambdaRole.Arn
+    CloudWatchGetPartnerFromDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
+        DependsOn: GetPartnerFromDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${GetPartnerFromDbLambda}
+            RetentionInDays: !Ref CloudWatchPerformDbOperationLambdaLogRetentionDays
+    # Get Partner from database metric filters
+    CloudWatchGetPartnerFromDbSuccessCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchGetPartnerFromDbLambdaLogGroup
+            FilterPattern: '{$.level = INFO && $.message = "SUCCESS:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: GetPartnerFromDb.SuccessCount
+                  MetricValue: "1"
+    CloudWatchGetPartnerFromDbFailureCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchGetPartnerFromDbLambdaLogGroup
+            FilterPattern: '{$.level = ERROR && $.message = "FAILURE:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: GetPartnerFromDb.FailureCount
+                  MetricValue: "1"
+    # Get Product from database lambda
+    GetProductFromDbLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: !Sub ${AWS::StackName}-GetProductFromDbLambda
+            Description: Get products from database
+            Runtime: !Ref LambdaPythonRuntime
+            Timeout: !Ref LambdaTimeoutSecs
+            Environment:
+                Variables:
+                    STACK_NAME: !Ref AWS::StackName
+                    LAMBDA_VERSION: !Ref LambdaGetProductFromDbVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
+                    DB_HOST:
+                        Fn::ImportValue: !Ref RdsEndpointAddressExportName
+                    DB_PORT:
+                        Fn::ImportValue: !Ref RdsEndpointPortExportName
+                    DB_NAME: !Ref DbName
+                    DB_USER: !Ref DbUser
+                    DB_PASSWORD: !Ref DbPassword
+                    DB_CONNECT_TIMEOUT: !Ref DbConnectTimeout
+            Code:
+                S3Bucket: !Ref S3LambdaPackageBucketName
+                S3Key: !Sub GetProductFromDbLambda-${LambdaGetProductFromDbVersion}.zip
+            Handler: lambda_function.lambda_handler
+            VpcConfig:
+                SecurityGroupIds:
+                    - Fn::ImportValue: !Ref LambdaSecurityGroupIdExportName
+                SubnetIds:
+                    - Fn::ImportValue: !Ref PrivateSubnetAIdExportName
+                    - Fn::ImportValue: !Ref PrivateSubnetBIdExportName
+            Role: !GetAtt IamGetDataFromDbLambdaRole.Arn
+    CloudWatchGetProductFromDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
+        DependsOn: GetProductFromDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${GetProductFromDbLambda}
+            RetentionInDays: !Ref CloudWatchPerformDbOperationLambdaLogRetentionDays
+    # Get Product from database metric filters
+    CloudWatchGetProductFromDbSuccessCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchGetProductFromDbLambdaLogGroup
+            FilterPattern: '{$.level = INFO && $.message = "SUCCESS:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: GetProductFromDb.SuccessCount
+                  MetricValue: "1"
+    CloudWatchGetProductFromDbFailureCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchGetProductFromDbLambdaLogGroup
+            FilterPattern: '{$.level = ERROR && $.message = "FAILURE:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: GetProductFromDb.FailureCount
+                  MetricValue: "1"
+    # Get PirateSource from database lambda
+    GetPirateSourceFromDbLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: !Sub ${AWS::StackName}-GetPirateSourceFromDbLambda
+            Description: Get pirate sources from database
+            Runtime: !Ref LambdaPythonRuntime
+            Timeout: !Ref LambdaTimeoutSecs
+            Environment:
+                Variables:
+                    STACK_NAME: !Ref AWS::StackName
+                    LAMBDA_VERSION: !Ref LambdaGetPirateSourceFromDbVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
+                    DB_HOST:
+                        Fn::ImportValue: !Ref RdsEndpointAddressExportName
+                    DB_PORT:
+                        Fn::ImportValue: !Ref RdsEndpointPortExportName
+                    DB_NAME: !Ref DbName
+                    DB_USER: !Ref DbUser
+                    DB_PASSWORD: !Ref DbPassword
+                    DB_CONNECT_TIMEOUT: !Ref DbConnectTimeout
+            Code:
+                S3Bucket: !Ref S3LambdaPackageBucketName
+                S3Key: !Sub GetPirateSourceFromDbLambda-${LambdaGetPirateSourceFromDbVersion}.zip
+            Handler: lambda_function.lambda_handler
+            VpcConfig:
+                SecurityGroupIds:
+                    - Fn::ImportValue: !Ref LambdaSecurityGroupIdExportName
+                SubnetIds:
+                    - Fn::ImportValue: !Ref PrivateSubnetAIdExportName
+                    - Fn::ImportValue: !Ref PrivateSubnetBIdExportName
+            Role: !GetAtt IamGetDataFromDbLambdaRole.Arn
+    CloudWatchGetPirateSourceFromDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
+        DependsOn: GetPirateSourceFromDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${GetPirateSourceFromDbLambda}
+            RetentionInDays: !Ref CloudWatchPerformDbOperationLambdaLogRetentionDays
+    # Get PirateSource from database metric filters
+    CloudWatchGetPirateSourceFromDbSuccessCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchGetPirateSourceFromDbLambdaLogGroup
+            FilterPattern: '{$.level = INFO && $.message = "SUCCESS:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: GetPirateSourceFromDb.SuccessCount
+                  MetricValue: "1"
+    CloudWatchGetPirateSourceFromDbFailureCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchGetPirateSourceFromDbLambdaLogGroup
+            FilterPattern: '{$.level = ERROR && $.message = "FAILURE:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: GetPirateSourceFromDb.FailureCount
+                  MetricValue: "1"
+    # Get Infringement from database lambda
+    GetInfringementFromDbLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: !Sub ${AWS::StackName}-GetInfringementFromDbLambda
+            Description: Get infringements from database
+            Runtime: !Ref LambdaPythonRuntime
+            Timeout: !Ref LambdaTimeoutSecs
+            Environment:
+                Variables:
+                    STACK_NAME: !Ref AWS::StackName
+                    LAMBDA_VERSION: !Ref LambdaGetInfringementFromDbVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
+                    DB_HOST:
+                        Fn::ImportValue: !Ref RdsEndpointAddressExportName
+                    DB_PORT:
+                        Fn::ImportValue: !Ref RdsEndpointPortExportName
+                    DB_NAME: !Ref DbName
+                    DB_USER: !Ref DbUser
+                    DB_PASSWORD: !Ref DbPassword
+                    DB_CONNECT_TIMEOUT: !Ref DbConnectTimeout
+            Code:
+                S3Bucket: !Ref S3LambdaPackageBucketName
+                S3Key: !Sub GetInfringementFromDbLambda-${LambdaGetInfringementFromDbVersion}.zip
+            Handler: lambda_function.lambda_handler
+            VpcConfig:
+                SecurityGroupIds:
+                    - Fn::ImportValue: !Ref LambdaSecurityGroupIdExportName
+                SubnetIds:
+                    - Fn::ImportValue: !Ref PrivateSubnetAIdExportName
+                    - Fn::ImportValue: !Ref PrivateSubnetBIdExportName
+            Role: !GetAtt IamGetDataFromDbLambdaRole.Arn
+    CloudWatchGetInfringementFromDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
+        DependsOn: GetInfringementFromDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${GetInfringementFromDbLambda}
+            RetentionInDays: !Ref CloudWatchPerformDbOperationLambdaLogRetentionDays
+    # Get Infringement from database metric filters
+    CloudWatchGetInfringementFromDbSuccessCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchGetInfringementFromDbLambdaLogGroup
+            FilterPattern: '{$.level = INFO && $.message = "SUCCESS:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: GetInfringementFromDb.SuccessCount
+                  MetricValue: "1"
+    CloudWatchGetInfringementFromDbFailureCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchGetInfringementFromDbLambdaLogGroup
+            FilterPattern: '{$.level = ERROR && $.message = "FAILURE:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: GetInfringementFromDb.FailureCount
+                  MetricValue: "1"
+    # Post Infringement in database lambda
+    PostInfringementInDbLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: !Sub ${AWS::StackName}-PostInfringementInDbLambda
+            Description: Post infringements into database
+            Runtime: !Ref LambdaPythonRuntime
+            Timeout: !Ref LambdaTimeoutSecs
+            Environment:
+                Variables:
+                    STACK_NAME: !Ref AWS::StackName
+                    LAMBDA_VERSION: !Ref LambdaPostInfringementInDbVersion
+                    LOG_LEVEL: !Ref LambdaLogLevel
+                    DB_HOST:
+                        Fn::ImportValue: !Ref RdsEndpointAddressExportName
+                    DB_PORT:
+                        Fn::ImportValue: !Ref RdsEndpointPortExportName
+                    DB_NAME: !Ref DbName
+                    DB_USER: !Ref DbUser
+                    DB_PASSWORD: !Ref DbPassword
+                    DB_CONNECT_TIMEOUT: !Ref DbConnectTimeout
+            Code:
+                S3Bucket: !Ref S3LambdaPackageBucketName
+                S3Key: !Sub PostInfringementInDbLambda-${LambdaPostInfringementInDbVersion}.zip
+            Handler: lambda_function.lambda_handler
+            VpcConfig:
+                SecurityGroupIds:
+                    - Fn::ImportValue: !Ref LambdaSecurityGroupIdExportName
+                SubnetIds:
+                    - Fn::ImportValue: !Ref PrivateSubnetAIdExportName
+                    - Fn::ImportValue: !Ref PrivateSubnetBIdExportName
+            Role: !GetAtt IamGetDataFromDbLambdaRole.Arn
+    CloudWatchPostInfringementInDbLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete # Retain
+        DependsOn: PostInfringementInDbLambda
+        Properties:
+            LogGroupName: !Sub /aws/lambda/${PostInfringementInDbLambda}
+            RetentionInDays: !Ref CloudWatchPerformDbOperationLambdaLogRetentionDays
+    # Get Infringement from database metric filters
+    CloudWatchPostInfringementInDbSuccessCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchPostInfringementInDbLambdaLogGroup
+            FilterPattern: '{$.level = INFO && $.message = "SUCCESS:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: PostInfringementInDb.SuccessCount
+                  MetricValue: "1"
+    CloudWatchPostInfringementInDbFailureCount:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref CloudWatchPostInfringementInDbLambdaLogGroup
+            FilterPattern: '{$.level = ERROR && $.message = "FAILURE:*"}'
+            MetricTransformations:
+                - MetricNamespace: !Ref AWS::StackName
+                  MetricName: PostInfringementInDb.FailureCount
+                  MetricValue: "1"
+    # API Gateway IAM Role
+    IamApiGatewayRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub ${AWS::StackName}-IamApiGatewayRole
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service: apigateway.amazonaws.com
+            Policies:
+                - PolicyName: !Sub ${AWS::StackName}-IamApiGatewayPolicy
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          # Get data from database lambdas
+                          - Effect: Allow
+                            Action:
+                                - lambda:*
+                            Resource:
+                                - !GetAtt GetPartnerFromDbLambda.Arn
+                                - !GetAtt GetProductFromDbLambda.Arn
+                                - !GetAtt GetPirateSourceFromDbLambda.Arn
+                                - !GetAtt GetInfringementFromDbLambda.Arn
+                                - !GetAtt PostInfringementInDbLambda.Arn
+    # API Gateway
+    ApiGatewayExposeInfringementDataRestApi:
+        Type: AWS::ApiGateway::RestApi
+        Properties:
+            Name: !Sub ${AWS::StackName}-ExposeInfringementDataRestApi
+            Description: REST API to expose infringement data imported from partners
+            EndpointConfiguration:
+                Types:
+                    - EDGE
+            # BodyS3Location: TODO
+    # GET /partners
+    ApiGatewayPartnerResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+            PathPart: "partners"
+            ParentId: !GetAtt ApiGatewayExposeInfringementDataRestApi.RootResourceId
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayGetPartnerMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            OperationName: GET /partners from database
+            HttpMethod: GET
+            AuthorizationType: NONE
+            ResourceId: !Ref ApiGatewayPartnerResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+            Integration:
+                Type: AWS_PROXY
+                IntegrationHttpMethod: POST
+                Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPartnerFromDbLambda.Arn}/invocations
+                Credentials: !GetAtt IamApiGatewayRole.Arn
+    # GET /partners/{partnerId}
+    ApiGatewayPartnerByIdResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+            PathPart: "{partnerId}"
+            ParentId: !Ref ApiGatewayPartnerResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayGetPartnerByIdMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            OperationName: GET /partners/{partnerId} from database
+            HttpMethod: GET
+            AuthorizationType: NONE
+            ResourceId: !Ref ApiGatewayPartnerByIdResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+            Integration:
+                Type: AWS_PROXY
+                IntegrationHttpMethod: POST
+                Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPartnerFromDbLambda.Arn}/invocations
+                Credentials: !GetAtt IamApiGatewayRole.Arn
+    # GET /products
+    ApiGatewayProductResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+            PathPart: "products"
+            ParentId: !GetAtt ApiGatewayExposeInfringementDataRestApi.RootResourceId
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayGetProductMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            OperationName: GET /products from database
+            HttpMethod: GET
+            AuthorizationType: NONE
+            ResourceId: !Ref ApiGatewayProductResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+            Integration:
+                Type: AWS_PROXY
+                IntegrationHttpMethod: POST
+                Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetProductFromDbLambda.Arn}/invocations
+                Credentials: !GetAtt IamApiGatewayRole.Arn
+    # GET /products/{productId}
+    ApiGatewayProductByIdResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+            PathPart: "{productId}"
+            ParentId: !Ref ApiGatewayProductResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayGetProductByIdMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            OperationName: GET /products/{productId} from database
+            HttpMethod: GET
+            AuthorizationType: NONE
+            ResourceId: !Ref ApiGatewayProductByIdResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+            Integration:
+                Type: AWS_PROXY
+                IntegrationHttpMethod: POST
+                Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetProductFromDbLambda.Arn}/invocations
+                Credentials: !GetAtt IamApiGatewayRole.Arn
+    # GET /pirate-sources
+    ApiGatewayPirateSourceResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+            PathPart: "pirate-sources"
+            ParentId: !GetAtt ApiGatewayExposeInfringementDataRestApi.RootResourceId
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayGetPirateSourceMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            OperationName: GET /pirate-sources from database
+            HttpMethod: GET
+            AuthorizationType: NONE
+            ResourceId: !Ref ApiGatewayPirateSourceResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+            Integration:
+                Type: AWS_PROXY
+                IntegrationHttpMethod: POST
+                Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPirateSourceFromDbLambda.Arn}/invocations
+                Credentials: !GetAtt IamApiGatewayRole.Arn
+    # GET /pirate-sources/{pirateSourceId}
+    ApiGatewayPirateSourceByIdResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+            PathPart: "{pirateSourceId}"
+            ParentId: !Ref ApiGatewayPirateSourceResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayGetPirateSourceByIdMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            OperationName: GET /pirate-sources/{pirateSourceId} from database
+            HttpMethod: GET
+            AuthorizationType: NONE
+            ResourceId: !Ref ApiGatewayPirateSourceByIdResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+            Integration:
+                Type: AWS_PROXY
+                IntegrationHttpMethod: POST
+                Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPirateSourceFromDbLambda.Arn}/invocations
+                Credentials: !GetAtt IamApiGatewayRole.Arn
+    # GET /infringements
+    ApiGatewayInfringementResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+            PathPart: "infringements"
+            ParentId: !GetAtt ApiGatewayExposeInfringementDataRestApi.RootResourceId
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayGetInfringementMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            OperationName: GET /infringements from database
+            HttpMethod: GET
+            AuthorizationType: NONE
+            ResourceId: !Ref ApiGatewayInfringementResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+            Integration:
+                Type: AWS_PROXY
+                IntegrationHttpMethod: POST
+                Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetInfringementFromDbLambda.Arn}/invocations
+                Credentials: !GetAtt IamApiGatewayRole.Arn
+    ApiGatewayPostInfringementMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            OperationName: POST /infringements into database
+            HttpMethod: POST
+            AuthorizationType: NONE
+            ResourceId: !Ref ApiGatewayInfringementResource
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+            Integration:
+                Type: AWS_PROXY
+                IntegrationHttpMethod: POST
+                Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostInfringementInDbLambda.Arn}/invocations
+                Credentials: !GetAtt IamApiGatewayRole.Arn
+    # API Gateway deploymnet
+    ApiGatewayExposeInfringementDataRestApiDeployment:
+        Type: AWS::ApiGateway::Deployment
+        DependsOn:
+            - ApiGatewayGetPartnerMethod
+            - ApiGatewayGetPartnerByIdMethod
+            - ApiGatewayGetProductMethod
+            - ApiGatewayGetProductByIdMethod
+            - ApiGatewayGetPirateSourceMethod
+            - ApiGatewayGetPirateSourceByIdMethod
+            - ApiGatewayGetInfringementMethod
+            - ApiGatewayPostInfringementMethod
+        Properties:
+            StageName: !Sub ${AWS::StackName}-ExposeInfringementDataRestApi
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayExposeInfringementDataRestApiStage:
+        Type: AWS::ApiGateway::Stage
+        Properties:
+            StageName: !Ref ApiGatewayExposeInfringementDataRestApiVersion
+            DeploymentId: !Ref ApiGatewayExposeInfringementDataRestApiDeployment
+            RestApiId: !Ref ApiGatewayExposeInfringementDataRestApi
+Outputs:
+    # REST API root URI
+    ApiGatewayExposeInfringementDataRestApiId:
+        Description: Expose infringement data REST API ID
+        Value: !Ref ApiGatewayExposeInfringementDataRestApi
+    ApiGatewayExposeInfringementDataRestApiRootUri:
+        Description: Expose infringement data REST API root URI
+        Value: !Sub https://${ApiGatewayExposeInfringementDataRestApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiGatewayExposeInfringementDataRestApiStage}
+        Export:
+            Name: !Sub ${AWS::StackName}:ExposeInfringementDataRestApiRootUri

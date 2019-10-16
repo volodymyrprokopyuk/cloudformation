@@ -1,0 +1,2 @@
+{"partner_uuid":"aa61382a-a98d-4ddf-a4a7-6d3543328af5","product_external_id":"PROD001","pirate_source_external_id":"PSRC001","detection_ts":"2000-01-01 00:00:00+0000","infringement_url":"https://www.pirate1.com/movies/1","infringement_status":"ACTIVE"}
+{"partner_uuid":"aa61382a-a98d-4ddf-a4a7-6d3543328af5","product_external_id":"PROD002","pirate_source_external_id":"PSRC002","detection_ts":"2000-01-01 00:00:00+0000","infringement_url":"https://www.pirate1.com/movies/2","infringement_status":"TAKEN_DOWN"}

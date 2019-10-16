@@ -1,0 +1,22 @@
+# Emacs
+*~
+
+# IntelliJ
+.idea/
+*.iml
+
+# Python
+__pycache__/
+.pytest_cache/
+htmlcov/
+.coverage
+pyvenv/
+
+# Fenix
+database/database_user.sql
+lambda/lib/psycopg2/
+lambda/function/transform/*/*.zip
+lambda/function/expose/*/*.zip
+doc/diagram/*.png
+doc/api/*.json
+doc/api/*.html

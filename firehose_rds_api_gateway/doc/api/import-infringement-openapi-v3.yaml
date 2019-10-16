@@ -1,0 +1,186 @@
+openapi: 3.0.0
+info: # REST API metadata
+    title: >
+        [Fenix] Import infringement REST API
+    description: >
+        REST API to import infringements into Fenix partner infringement management
+        system
+    version: v1 # AWS API Gateway Deployment StageName
+paths: # REST API endpoints
+    /infringements:
+        post:
+            summary: Import infringement into Fenix
+            description: >
+                Import infringement definied by a JSON payload into Fenix partner
+                infringement management system. A new infringement will be created. An
+                existing infringement will be updated. The infringement data model in
+                idempotent, so the same infrigement can be imported many times without
+                creating multiple copies of the same infringement
+            operationId: postInfringement
+            tags:
+                - Infringement resource
+            requestBody:
+                description: Defines a content of the infringement to import
+                content:
+                    "application/json":
+                        schema:
+                            $ref: "#/components/schemas/PostInfringementRequest"
+                        examples:
+                            PostInfringementRequest:
+                                $ref: "#/components/examples/PostInfringementRequest"
+                required: true
+            responses:
+                "200":
+                    description: >
+                        Successful infringement creation/update returns an
+                        infringementId
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/PostInfringementResponse"
+                            examples:
+                                PostInfringementResponse:
+                                    $ref: "#/components/examples/PostInfringementResponse"
+                "400":
+                    description: Request validation error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+                "500":
+                    description: Internal server error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+components: # REST API request/response reusable schemas
+    schemas:
+        PostInfringementRequest:
+            type: object
+            description: POST infringement request
+            properties:
+                parentUuid:
+                    type: string
+                    format: uuid
+                    description: >
+                        Partner UUID that have been generated and shared with the partner
+                productExternalId:
+                    type: string
+                    maxLength: 50
+                    description: Product external ID designated by partner
+                pirateSourceExternalId:
+                    type: string
+                    maxLength: 50
+                    description: Pirate source external ID designedted by partner
+                detectionTs:
+                    type: timestamp
+                    description: >
+                        Infringement detection UTC timestamp designated by partner
+                infringementUrl:
+                    type: string
+                    format: uri
+                    maxLength: 500
+                    description: Infringement URL
+                infringementScreenshot:
+                    type: object
+                    description: Optional infringement screenshot information
+                    properties:
+                        screenshotUrl:
+                            type: array
+                            items:
+                                type: string
+                            minItems: 1
+                            description: >
+                                Array of infringement screenshot URLs where the actual
+                                screenshots are stored
+                    required:
+                        - screenshotUrl
+                infringementStatus:
+                    type: string
+                    enum:
+                        - ACTIVE
+                        - TAKEN_DOWN
+                    description: >
+                        Reported by a partner infringement may be still ACTIVE or
+                        already TAKEN_DOWN
+            required:
+                - parentUuid
+                - productExternalId
+                - pirateSourceExternalId
+                - detectionTs
+                - infringementUrl
+                - infringementStatus
+        PostInfringementResponse:
+            type: object
+            description: POST infringement response
+            properties:
+                data:
+                    type: object
+                    properties:
+                        infringementId:
+                            type: integer
+                            description: Infringement ID
+                    required:
+                        - infringementId
+            required:
+                - data
+        CommonErrorResponse:
+            type: object
+            description: Common error response
+            required:
+                - error
+            properties:
+                error:
+                    type: object
+                    properties:
+                        message:
+                            type: string
+                            description: Short error description
+                        details:
+                            type: string
+                            description: >
+                                Extended description of the error context with error
+                                reasons and possible actions to error remediation
+                    required:
+                        - message
+                        - details
+    examples:
+        PostInfringementRequest:
+            summary: POST infringement request
+            description: >
+                Valid POST infringement request to import an infringement into Fenix
+            value: {
+                "partnerUuid": "aa61382a-a98d-4ddf-a4a7-6d3543328af5",
+                "productExternalId": "PROD001",
+                "pirateSourceExternalId": "PSRC001",
+                "detectionTs": "2000-01-01 00:00:00+0000",
+                "infringementUrl": "https://www.pirate1.com/movies/1",
+                "infringementScreenshot": {
+                    "screenshotUrl": ["https://s3.aws.com/screenshot-01.jpg"]
+                },
+                "infringementStatus": "ACTIVE"
+            }
+        PostInfringementResponse:
+            summary: POST infringement response
+            description: Valid POST infringement response
+            value: {
+                "data": {
+                    "infringementId": 46
+                }
+            }
+        CommonErrorResponse:
+            summary: Common error response
+            description: >
+                Common error response returned on HTTP 400 and 500 error situations
+            value: {
+                "error": {
+                    "details": "mandatory productId must be an integer",
+                    "message": "Validate request error"
+                }
+            }

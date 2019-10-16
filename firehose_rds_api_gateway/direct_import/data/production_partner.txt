@@ -1,0 +1,1 @@
+{"partner_uuid": "f95d62d8-1047-4fe0-9ee7-6bc23e4a5850", "partner_name": "Smart Media Protection", "partner_status": "ACTIVE", "registration_ts": "2019-09-26 10:22:14+0200"}

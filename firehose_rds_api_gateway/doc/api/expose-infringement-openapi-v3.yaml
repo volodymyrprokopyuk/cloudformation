@@ -1,0 +1,840 @@
+openapi: 3.0.0
+info: # REST API metadata
+    title: >
+        [Fenix] Expose infringement REST API
+    description: >
+        REST API to export infringements from Fenix partner infringement management
+        system
+    version: v1 # AWS API Gateway Deployment StageName
+paths: # REST API endpoints
+    /partners:
+        get:
+            summary: Expose partner from Fenix
+            description: >
+                Export partners that are registered at Fenix that satisfy the request query
+            operationId: getPartner
+            tags:
+                - Partner resource
+            parameters:
+                - name: partnerUuid
+                  in: query
+                  description: >
+                      Partner UUID. partnerUuid when provided is exclusive (no other
+                      query string parameters can be provided)
+                  schema:
+                      type: string
+                      format: uuid
+                  examples:
+                      PartnerUuid:
+                          summary: GET partner by UUID
+                          description: Valid partnerUuid
+                          value: GET /partners?partnerUuid=aa61382a-a98d-4ddf-a4a7-6d3543328af5
+                - name: partnerName
+                  in: query
+                  description: Partner name (substring match)
+                  schema:
+                      type: string
+                      maxLength: 100
+                  examples:
+                      PartnerName:
+                          summary: GET partner by partner name
+                          description: Valid partnerName
+                          value: GET /partners?partnerName=Media Protection
+                - name: partnerStatus
+                  in: query
+                  description: Partner status (exact match)
+                  schema:
+                      type: string
+                      enum:
+                          - ACTIVE
+                          - INACTIVE
+                  examples:
+                      PartnerStatus:
+                          summary: GET partner by partner status
+                          description: Valid partnerStatus
+                          value: GET /partners?partnerStatus=ACTIVE
+            responses:
+                "200":
+                    description: List of partners that satisfy the request query
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/GetPartnerResponse"
+                            examples:
+                                PostInfringementResponse:
+                                    $ref: "#/components/examples/GetPartnerResponse"
+                "400":
+                    description: Request validation error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+                "500":
+                    description: Internal server error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+    /partners/{partnerId}:
+        get:
+            summary: Expose partner by ID from Fenix
+            description: Export partner by ID
+            operationId: getPartnerById
+            tags:
+                - Partner resource
+            parameters:
+                - name: partnerId
+                  in: path
+                  description: Partner ID
+                  required: true
+                  schema:
+                      type: integer
+                  examples:
+                      PartnerId:
+                          summary: GET partner by ID
+                          description: Valid partnerId
+                          value: GET /partners/1
+            responses:
+                "200":
+                    description: A partner with the requested partner ID
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/GetPartnerResponse"
+                            examples:
+                                PostInfringementResponse:
+                                    $ref: "#/components/examples/GetPartnerResponse"
+                "400":
+                    description: Request validation error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+                "500":
+                    description: Internal server error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+    /products:
+        get:
+            summary: Expose product from Fenix
+            description: >
+                Export products that are registered at Fenix that satisfy the request
+                query
+            operationId: getProduct
+            tags:
+                - Product resource
+            parameters:
+                - name: partnerId
+                  in: query
+                  required: true
+                  description: Mandatory partner ID
+                  schema:
+                      type: integer
+                  examples:
+                      PartnerId:
+                          summary: GET products for partner ID
+                          description: Valid partnerId
+                          value: GET /partners?partnerId=14
+                - name: productTitle
+                  in: query
+                  description: Product title
+                  schema:
+                      type: string
+                      maxLength: 100
+                  examples:
+                      ProductTitle:
+                          summary: GET products with product title
+                          description: Valid productTitle (substring match)
+                          value: GET /partners?productTitle=Media Protection
+                - name: protectionStatus
+                  in: query
+                  description: Product protection status
+                  schema:
+                      type: string
+                      enum:
+                          - ACTIVE
+                          - INACTIVE
+                  examples:
+                      ProtectionStatus:
+                          summary: GET products with protection status
+                          description: Valid protectionStatus (exact match)
+                          value: GET /partners?protectionStatus=ACTIVE
+            responses:
+                "200":
+                    description: List of products that satisfy the request query
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/GetProductResponse"
+                            examples:
+                                PostInfringementResponse:
+                                    $ref: "#/components/examples/GetProductResponse"
+                "400":
+                    description: Request validation error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+                "500":
+                    description: Internal server error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+    /products/{productId}:
+        get:
+            summary: Expose product by ID from Fenix
+            description: Export partner by ID
+            operationId: getProductById
+            tags:
+                - Product resource
+            parameters:
+                - name: productId
+                  in: path
+                  description: Product ID
+                  required: true
+                  schema:
+                      type: integer
+                  examples:
+                      ProductId:
+                          summary: GET product by ID
+                          description: Valid productId
+                          value: GET /products/1
+            responses:
+                "200":
+                    description: A product with the requestd product ID
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/GetProductResponse"
+                            examples:
+                                PostInfringementResponse:
+                                    $ref: "#/components/examples/GetProductResponse"
+                "400":
+                    description: Request validation error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+                "500":
+                    description: Internal server error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+    /pirate-sources:
+        get:
+            summary: Expose pirate source from Fenix
+            description: >
+                Export pirate sources that are registered at Fenix that satisfy the
+                request query
+            operationId: getPirateSource
+            tags:
+                - Pirate source resource
+            parameters:
+                - name: partnerId
+                  in: query
+                  required: true
+                  description: Mandatory partner ID
+                  schema:
+                      type: integer
+                  examples:
+                      PartnerId:
+                          summary: GET products for partner ID
+                          description: Valid partnerId
+                          value: GET /partners?partnerId=14
+                - name: pirateSourceName
+                  in: query
+                  description: Pirate source name
+                  schema:
+                      type: string
+                      maxLength: 50
+                  examples:
+                      PirateSourceName:
+                          summary: GET pirate sources with pirate source name
+                          description: Valid pirateSourceName (substring match)
+                          value: GET /pirate-sources?pirateSourceName=FACEBOOK
+                - name: pirateSourceType
+                  in: query
+                  description: Pirate source type
+                  schema:
+                      type: string
+                      maxLength: 50
+                  examples:
+                      PirateSourceType:
+                          summary: GET pirate sources with pirate source type
+                          description: Valid pirateSourceType (exact match)
+                          value: GET /pirate-sources?pirateSourceType=APPS
+            responses:
+                "200":
+                    description: List of pirate sources that satisfy the request query
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/GetPirateSourceResponse"
+                            examples:
+                                PostInfringementResponse:
+                                    $ref: "#/components/examples/GetPirateSourceResponse"
+                "400":
+                    description: Request validation error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+                "500":
+                    description: Internal server error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+    /pirate-sources/{pirateSourceId}:
+        get:
+            summary: Expose pirate source by ID from Fenix
+            description: Export pirate source by ID
+            operationId: getPirateSourceById
+            tags:
+                - Pirate source resource
+            parameters:
+                - name: pirateSourceId
+                  in: path
+                  description: Pirate Source ID
+                  required: true
+                  schema:
+                      type: integer
+                  examples:
+                      PirateSourceId:
+                          summary: GET pirate source by ID
+                          description: Valid pirateSourceId
+                          value: GET /pirate-sources/1
+            responses:
+                "200":
+                    description: A pirate source with the requested pirate source ID
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/GetPirateSourceResponse"
+                            examples:
+                                PostInfringementResponse:
+                                    $ref: "#/components/examples/GetPirateSourceResponse"
+                "400":
+                    description: Request validation error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+                "500":
+                    description: Internal server error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+    /infringements:
+        get:
+            summary: Expose infringement from Fenix
+            description: >
+                Export infringements that are registered at Fenix that satisfy the
+                request query
+            operationId: getInfringement
+            tags:
+                - Infringement resource
+            parameters:
+                - name: partnerId
+                  in: query
+                  description: >
+                      Partner ID (one of partnerId, partnerUuid, or productId must be
+                      provided)
+                  schema:
+                      type: integer
+                  examples:
+                      PartnerId:
+                          summary: GET infringements for partner ID
+                          description: Valid partnerId
+                          value: GET /infringements?partnerId=1
+                - name: partnerUuid
+                  in: query
+                  description: >
+                      Partner UUID (one of partnerId, partnerUuid, or productId must be
+                      provided)
+                  schema:
+                      type: string
+                      format: uuid
+                  examples:
+                      PartnerUuid:
+                          summary: GET infringements for partner UUID
+                          description: Valid partnerUuid
+                          value: GET /infringements?partnerUuid=aa61382a-a98d-4ddf-a4a7-6d3543328af5
+                - name: productId
+                  in: query
+                  description: >
+                      Product ID (one of partnerId, partnerUuid, or productId must be
+                      provided)
+                  schema:
+                      type: integer
+                  examples:
+                      ProductId:
+                          summary: GET infringements for product ID
+                          description: Valid productId
+                          value: GET /infringements?productId=1
+                - name: pirateSourceId
+                  in: query
+                  description: Pirate Source ID
+                  schema:
+                      type: integer
+                  examples:
+                      PirateSourceId:
+                          summary: GET infringements for pirate source ID
+                          description: Valid pirateSourceId
+                          value: GET /infringements?pirateSourceId=1
+                - name: infringementStatus
+                  in: query
+                  description: Infringement status
+                  schema:
+                      type: string
+                      enum:
+                          - ACTIVE
+                          - TAKEN_DOWN
+                  examples:
+                      InfringementStatus:
+                          summary: GET infirngements with infringement status
+                          description: Valid infringementStatus (exact match)
+                          value: GET /infringements?infringementStatus=TAKEN_DOwN
+                - name: sinceTs
+                  in: query
+                  description: Infringement detection since UTC timestamp
+                  schema:
+                      type: string
+                      format: timestamp
+                  examples:
+                      SinceTs:
+                          summary: GET infirngements whose detection timestamp is after sinceTs
+                          description: Valid sinceTs (inclusive match)
+                          value: GET /infringements?sinceTs=2000-01-01 00:00:01+0000
+                - name: tillTs
+                  in: query
+                  description: Infringement detection till UTC timestamp
+                  schema:
+                      type: string
+                      format: timestamp
+                  examples:
+                      TillTs:
+                          summary: GET infirngements whose detection timestamp is before tillTs
+                          description: Valid tillTs (exlucsive match)
+                          value: GET /infringements?tillTs=2000-01-01 00:00:01+0000
+                - name: limit
+                  in: query
+                  description: Limit the number of returned infringements
+                  schema:
+                      type: integer
+                      maximum: 1000
+                      # default: 100
+                  examples:
+                      Limit:
+                          summary: Limit the number of returned infringements
+                          description: Valid limit
+                          value: GET /infringements?limit=100
+                - name: offset
+                  in: query
+                  description: >
+                      Offset must be used in conjuction with the limit query stinrg
+                      parameter to set the offset for the returned infringements
+                  schema:
+                      type: integer
+                      maximum: 100
+                      # default: 0
+                  examples:
+                      Offset:
+                          summary: Limit and offset the number of returned infringements
+                          description: Valid offset
+                          value: GET /infringements?limit=100&offset=100
+            responses:
+                "200":
+                    description: List of infringements that satisfy the request query
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/GetInfringementResponse"
+                            examples:
+                                PostInfringementResponse:
+                                    $ref: "#/components/examples/GetInfringementResponse"
+                "400":
+                    description: Request validation error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+                "500":
+                    description: Internal server error
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/CommonErrorResponse"
+                            examples:
+                                CommonErrorResponse:
+                                    $ref: "#/components/examples/CommonErrorResponse"
+components: # REST API request/response reusable schemas
+    schemas:
+        GetPartnerResponse:
+            type: object
+            description: GET partner response
+            properties:
+                data:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            partnerId:
+                                type: integer
+                                description: Partner ID
+                            partnerUuid:
+                                type: string
+                                format: uuid
+                                description: Partner UUID
+                            partnerName:
+                                type: string
+                                maxLength: 100
+                                description: Partner name
+                            partnerStatus:
+                                type: string
+                                enum:
+                                    - ACTIVE
+                                    - INACTIVE
+                                description: Partner status
+                            registrationTs:
+                                type: stirng
+                                format: timestamp
+                                description: Partner registration UTC timestamp
+                        required:
+                            - partnerId
+                            - partnerUuid
+                            - partnerName
+                            - partnerStatus
+                            - registrationTs
+            required:
+                - data
+        GetProductResponse:
+            type: object
+            description: GET product response
+            properties:
+                data:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            productId:
+                                type: integer
+                                description: Product ID
+                            productTitle:
+                                type: string
+                                maxLength: 100
+                                description: Product tittle
+                            productImageUrl:
+                                type: string
+                                format: uri
+                                description: Product image URL
+                            protectionStatus:
+                                type: string
+                                enum:
+                                    - ACTIVE
+                                    - INACTIVE
+                                description: Product protection status
+                            firstProtectionTs:
+                                type: string
+                                format: timestamp
+                                description: Product first protection UTC timestamp
+                            registrationTs:
+                                type: string
+                                format: timestamp
+                                description: Product status change registration UTC timestamp
+                            partnerId:
+                                type: integer
+                                description: Partner ID
+                            partnerUuid:
+                                type: string
+                                format: uuid
+                                description: Partner UUID
+                            partnerName:
+                                type: string
+                                maxLength: 100
+                                description: Partner name
+                        required:
+                            - productId
+                            - productTitle
+                            - protectionStatus
+                            - firstProtectionTs
+                            - registrationTs
+                            - partnerId
+                            - partnerUuid
+                            - partnerName
+            required:
+                - data
+        GetPirateSourceResponse:
+            type: object
+            description: GET pirate source response
+            properties:
+                data:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            pirateSourceId:
+                                type: integer
+                                description: Pirate source ID
+                            pirateSourceName:
+                                type: string
+                                maxLength: 50
+                                description: Pirate source name
+                            pirateSourceType:
+                                type: string
+                                maxLength: 50
+                                description: Pirate source type
+                            registrationTs:
+                                type: string
+                                format: timestamp
+                                description: Pirate source registration UTC timestamp
+                            partnerId:
+                                type: integer
+                                description: Partner ID
+                            partnerUuid:
+                                type: string
+                                format: uuid
+                                description: Partner UUID
+                            partnerName:
+                                type: string
+                                maxLength: 100
+                                description: Partner name
+                        required:
+                            - pirateSourceId
+                            - pirateSourceName
+                            - pirateSourceType
+                            - registrationTs
+                            - partnerId
+                            - partnerUuid
+                            - partnerName
+            required:
+                - data
+        GetInfringementResponse:
+            type: object
+            description: GET infringement response
+            properties:
+                data:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            detectionTs:
+                                type: string
+                                format: timestamp
+                                description: Infringement detection UTC timestamp
+                            infringementUrl:
+                                type: string
+                                format: uri
+                                description: Infringement URL
+                            infringementScreenshot:
+                                type: object
+                                description: Optional infringement screenshot information
+                                properties:
+                                    screenshotUrl:
+                                        type: array
+                                        items:
+                                            type: string
+                                        minItems: 1
+                                        description: >
+                                            Array of infringement screenshot URLs where
+                                            the actual screenshots are stored
+                                required:
+                                    - screenshotUrl
+                            infringementStatus:
+                                type: stirng
+                                enum:
+                                    - ACTIVE
+                                    - TAKEN_DOWN
+                                description: Infringement status
+                            productId:
+                                type: integer
+                                description: Product ID
+                            productTitle:
+                                type: string
+                                maxLength: 100
+                                description: Product tittle
+                            productImageUrl:
+                                type: string
+                                format: uri
+                                description: Product image URL
+                            pirateSourceId:
+                                type: integer
+                                description: Pirate source ID
+                            pirateSourceName:
+                                type: string
+                                maxLength: 50
+                                description: Pirate source name
+                            pirateSourceType:
+                                type: string
+                                maxLength: 50
+                                description: Pirate source type
+                            partnerId:
+                                type: integer
+                                description: Partner ID
+                            partnerUuid:
+                                type: string
+                                format: uuid
+                                description: Partner UUID
+                            partnerName:
+                                type: string
+                                maxLength: 100
+                                description: Partner name
+                        required:
+                            - detectionTs
+                            - infringementUrl
+                            - infringementStatus
+                            - productId
+                            - productTitle
+                            - pirateSourceId
+                            - pirateSourceName
+                            - pirateSourceType
+                            - partnerId
+                            - partnerUuid
+                            - partnerName
+            required:
+                - data
+        CommonErrorResponse:
+            type: object
+            description: Common error response
+            required:
+                - error
+            properties:
+                error:
+                    type: object
+                    properties:
+                        message:
+                            type: string
+                            description: Short error description
+                        details:
+                            type: string
+                            description: >
+                                Extended description of the error context with error
+                                reasons and possible actions to error remediation
+                    required:
+                        - message
+                        - details
+    examples:
+        GetPartnerResponse:
+            summary: GET partner response
+            description: Valid GET partner response
+            value: {
+                "data": [
+                    {
+                        "partnerId": 14,
+                        "partnerName": "Smart Media Protection",
+                        "partnerStatus": "ACTIVE",
+                        "partnerUuid": "f95d62d8-1047-4fe0-9ee7-6bc23e4a5850",
+                        "registrationTs": "2019-09-26 08:22:14+0000"
+                    }
+                ]
+            }
+        GetProductResponse:
+            summary: GET product response
+            description: Valid GET product response
+            value: {
+                "data": [
+                    {
+                        "firstProtectionTs": "2019-09-06 00:00:00+0000",
+                        "partnerId": 14,
+                        "partnerName": "Smart Media Protection",
+                        "partnerUuid": "f95d62d8-1047-4fe0-9ee7-6bc23e4a5850",
+                        "productId": 106,
+                        "productImageUrl": "https://media.3antsds.com/_uploads/products/56970b0fab83d21e782ea9ede01870bf.png",
+                        "productTitle": "Janat Tears",
+                        "protectionStatus": "ACTIVE",
+                        "registrationTs": "2019-09-06 00:00:00+0000"
+                    }
+                ]
+            }
+        GetPirateSourceResponse:
+            summary: GET pirate source response
+            description: Valid GET pirate source response
+            value: {
+                "data": [
+                    {
+                        "partnerId": 14,
+                        "partnerName": "Smart Media Protection",
+                        "partnerUuid": "f95d62d8-1047-4fe0-9ee7-6bc23e4a5850",
+                        "pirateSourceId": 65,
+                        "pirateSourceName": "FACEBOOK MARKETPLACE",
+                        "pirateSourceType": "APPS",
+                        "registrationTs": "2018-01-01 00:00:00+0000"
+                    }
+                ]
+            }
+        GetInfringementResponse:
+            summary: GET infringement response
+            description: Valid GET infringement response
+            value: {
+                "data": [
+                    {
+                        "detectionTs": "2019-09-25 07:36:34+0000",
+                        "infringementScreenshot": null,
+                        "infringementStatus": "ACTIVE",
+                        "infringementUrl": "https://y2mate.top/online/8eX2GjYT63Z/سليم-و-جنات-مسلسل-دموع-جنات-♥♥♥",
+                        "partnerId": 14,
+                        "partnerName": "Smart Media Protection",
+                        "partnerUuid": "f95d62d8-1047-4fe0-9ee7-6bc23e4a5850",
+                        "pirateSourceId": 19,
+                        "pirateSourceName": "LINK PAGES",
+                        "pirateSourceType": "SEARCH_ENGINE",
+                        "productId": 106,
+                        "productImageUrl": "https://media.3antsds.com/_uploads/products/56970b0fab83d21e782ea9ede01870bf.png",
+                        "productTitle": "Janat Tears"
+                    }
+                ]
+            }
+        CommonErrorResponse:
+            summary: Common error response
+            description: >
+                Common error response returned on HTTP 400 and 500 error situations
+            value: {
+                "error": {
+                    "details": "mandatory productId must be an integer",
+                    "message": "Validate request error"
+                }
+            }
